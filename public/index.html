@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Support Ticket System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <h1>🛠️ IT Support Tickets</h1>
+  <div class="topbar-actions">
+    <button id="adminBtn" class="btn btn-ghost">Admin sign-in</button>
+    <button id="newTicketBtn" class="btn btn-primary">+ New Ticket</button>
+  </div>
+</header>
+
+<main>
+  <section id="incidentBanner" class="incident-banner hidden">
+    <span class="pulse"></span>
+    <span id="incidentBannerText"></span>
+  </section>
+
+  <div class="toolbar">
+    <div class="tabs" id="statusTabs">
+      <button class="tab active" data-status="">All</button>
+      <button class="tab" data-status="open">Open</button>
+      <button class="tab" data-status="in_progress">In Progress</button>
+      <button class="tab" data-status="resolved">Resolved</button>
+      <button class="tab" data-status="closed">Closed</button>
+    </div>
+    <button id="refreshBtn" class="btn btn-ghost" title="Refresh">⟳</button>
+  </div>
+
+  <div id="ticketList" class="ticket-list"></div>
+</main>
+
+<!-- New Ticket Modal -->
+<div id="newTicketModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>New Support Ticket</h2>
+      <button class="close-btn" data-close="newTicketModal">&times;</button>
+    </div>
+    <form id="newTicketForm">
+      <label>Your name
+        <input type="text" name="requester_name" required>
+      </label>
+      <label>Your email
+        <input type="email" name="requester_email" required>
+      </label>
+      <label>Title
+        <input type="text" name="title" required maxlength="150">
+      </label>
+      <label>Description
+        <textarea name="description" rows="4" required></textarea>
+      </label>
+      <div class="form-row">
+        <label>Category
+          <select name="category">
+            <option value="hardware">Hardware</option>
+            <option value="software">Software</option>
+            <option value="network">Network</option>
+            <option value="account">Account / Access</option>
+            <option value="other" selected>Other</option>
+          </select>
+        </label>
+        <label>Priority
+          <select name="priority">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </label>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" name="is_incident">
+        This is a service outage / downtime incident (starts a downtime counter)
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Submit Ticket</button>
+      <p id="newTicketError" class="error hidden"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Admin Sign-in Modal -->
+<div id="adminModal" class="modal hidden">
+  <div class="modal-content modal-sm">
+    <div class="modal-header">
+      <h2>Admin Sign-in</h2>
+      <button class="close-btn" data-close="adminModal">&times;</button>
+    </div>
+    <form id="adminForm">
+      <label>Admin token
+        <input type="password" name="token" placeholder="ADMIN_TOKEN from .env" required>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Save</button>
+    </form>
+  </div>
+</div>
+
+<!-- Ticket Detail Modal -->
+<div id="detailModal" class="modal hidden">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <h2 id="detailTitle">Ticket</h2>
+      <button class="close-btn" data-close="detailModal">&times;</button>
+    </div>
+    <div id="detailBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
