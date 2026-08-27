@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import type { Material, MaterialPlan, ProductionPlanEntry, PurchaseOrder } from "../types";
-import { computeAllPlans } from "../lib/mrp";
+import { computeAllPlans, isOrderDelayed } from "../lib/mrp";
 import {
   IconAlert,
   IconBox,
@@ -40,6 +40,7 @@ export function PlanningDashboard({
   const materialsToOrder = new Set(allSuggestions.map((s) => s.materialId)).size;
   const leadTimeMissingCount = plans.filter((p) => p.leadTimeMissing).length;
   const materialsOk = materials.length - materialsToOrder - leadTimeMissingCount;
+  const delayedOrderCount = purchaseOrders.filter((po) => isOrderDelayed(po)).length;
 
   const suggestionsPaged = usePagedSearch(
     allSuggestions,
@@ -148,6 +149,18 @@ export function PlanningDashboard({
             <span className="stat-card-value">{materialsOk}</span>
             <span className="stat-card-caption">Stock + incoming meet demand</span>
           </div>
+          {delayedOrderCount > 0 && (
+            <div className="stat-card">
+              <span className="stat-icon tone-delayed">
+                <IconTruck />
+              </span>
+              <span className="stat-card-label">Delayed orders</span>
+              <span className="stat-card-value">{delayedOrderCount}</span>
+              <span className="stat-card-caption tone-delayed">
+                Past expected arrival, not received
+              </span>
+            </div>
+          )}
           {leadTimeMissingCount > 0 && (
             <div className="stat-card">
               <span className="stat-icon tone-running">

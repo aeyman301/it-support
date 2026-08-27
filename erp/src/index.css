@@ -778,6 +778,16 @@ tbody tr:hover td {
   color: var(--pending);
 }
 
+.status-badge.delayed {
+  background: var(--delayed-bg);
+  color: var(--delayed);
+}
+
+h2 .status-badge.title-badge {
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
 .urgent-row td {
   background: var(--delayed-bg);
 }

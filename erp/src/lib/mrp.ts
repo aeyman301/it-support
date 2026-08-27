@@ -19,6 +19,19 @@ export function computeExpectedArrival(
 }
 
 /**
+ * An outstanding order is "delayed" once its expected arrival date has
+ * passed without it being marked received — computed live against today's
+ * date rather than stored, so it updates on its own with no manual status
+ * change.
+ */
+export function isOrderDelayed(
+  po: Pick<PurchaseOrder, "status" | "expectedArrivalDate">,
+  today: string = isoToday(),
+): boolean {
+  return po.status === "outstanding" && po.expectedArrivalDate < today;
+}
+
+/**
  * Builds a time-phased projection of on-hand stock for one material, combining
  * current warehouse stock, outstanding (not-yet-arrived) purchase orders, and
  * planned demand from production. Whenever the projection would dip below the

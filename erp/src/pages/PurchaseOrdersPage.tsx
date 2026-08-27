@@ -6,7 +6,7 @@ import {
   updateMaterial,
   updatePurchaseOrder,
 } from "../lib/repo";
-import { computeExpectedArrival, isoToday } from "../lib/mrp";
+import { computeExpectedArrival, isOrderDelayed, isoToday } from "../lib/mrp";
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
@@ -33,9 +33,9 @@ export function PurchaseOrdersPage({
 }) {
   const [form, setForm] = useState(() => emptyForm(materials));
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<PurchaseOrderStatus | "all">(
-    "outstanding",
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    PurchaseOrderStatus | "all" | "delayed"
+  >("outstanding");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -135,9 +135,13 @@ export function PurchaseOrdersPage({
     }
   }
 
-  const visible = purchaseOrders.filter(
-    (po) => statusFilter === "all" || po.status === statusFilter,
-  );
+  const delayedCount = purchaseOrders.filter((po) => isOrderDelayed(po)).length;
+
+  const visible = purchaseOrders.filter((po) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "delayed") return isOrderDelayed(po);
+    return po.status === statusFilter;
+  });
 
   const matchesPO = (po: PurchaseOrder, q: string) =>
     po.poNumber.toLowerCase().includes(q) ||
@@ -265,7 +269,14 @@ export function PurchaseOrdersPage({
 
       <section className="card">
         <div className="card-header-row">
-          <h2>Purchase orders ({visible.length})</h2>
+          <h2>
+            Purchase orders ({visible.length})
+            {delayedCount > 0 && (
+              <span className="status-badge delayed title-badge">
+                {delayedCount} delayed
+              </span>
+            )}
+          </h2>
           <SearchBox
             value={query}
             onChange={setQuery}
@@ -274,10 +285,13 @@ export function PurchaseOrdersPage({
           <select
             value={statusFilter}
             onChange={(e) =>
-              setStatusFilter(e.target.value as PurchaseOrderStatus | "all")
+              setStatusFilter(
+                e.target.value as PurchaseOrderStatus | "all" | "delayed",
+              )
             }
           >
             <option value="outstanding">Outstanding only</option>
+            <option value="delayed">Delayed only</option>
             <option value="received">Received only</option>
             <option value="cancelled">Cancelled only</option>
             <option value="all">All</option>
@@ -305,7 +319,11 @@ export function PurchaseOrdersPage({
                   <td>{po.qty}</td>
                   <td>{po.expectedArrivalDate}</td>
                   <td>
-                    <span className={`status-badge ${po.status}`}>{po.status}</span>
+                    {isOrderDelayed(po) ? (
+                      <span className="status-badge delayed">delayed</span>
+                    ) : (
+                      <span className={`status-badge ${po.status}`}>{po.status}</span>
+                    )}
                   </td>
                   <td className="row-actions">
                     {po.status === "outstanding" && (
