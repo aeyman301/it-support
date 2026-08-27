@@ -1,0 +1,37 @@
+# This folder currently holds only Assets/Scripts - see README.md for why
+# ProjectSettings/Packages/Scenes aren't checked in yet. Once you create the
+# real Unity project locally and add it here, this covers the usual junk.
+
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+crashlytics-build.properties
+sysinfo.txt
+
+/[Rr]ecordings/
