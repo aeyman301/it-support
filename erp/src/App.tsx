@@ -13,11 +13,31 @@ import { ProductionPlanPage } from "./pages/ProductionPlanPage";
 
 type Tab = "planning" | "materials" | "orders" | "plan";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "planning", label: "Planning Dashboard" },
-  { id: "materials", label: "Materials & Lead Time" },
-  { id: "orders", label: "Outstanding Orders" },
-  { id: "plan", label: "Production Plan" },
+const TABS: { id: Tab; code: string; label: string; description: string }[] = [
+  {
+    id: "planning",
+    code: "01",
+    label: "Planning Dashboard",
+    description: "Order signals",
+  },
+  {
+    id: "materials",
+    code: "02",
+    label: "Materials & Lead Time",
+    description: "Master data",
+  },
+  {
+    id: "orders",
+    code: "03",
+    label: "Outstanding Orders",
+    description: "Incoming stock",
+  },
+  {
+    id: "plan",
+    code: "04",
+    label: "Production Plan",
+    description: "Demand",
+  },
 ];
 
 export default function App() {
@@ -45,17 +65,9 @@ export default function App() {
 
   if (!firebaseConfigured) {
     return (
-      <div className="app-shell">
-        <header className="app-header">
-          <div>
-            <h1>Material Planning</h1>
-            <p className="subtitle">
-              Stock, outstanding orders, production plan and
-              material-specific lead time, in one place.
-            </p>
-          </div>
-        </header>
-        <div className="card">
+      <div className="boot-screen">
+        <div className="boot-mark">MP</div>
+        <div className="card boot-card">
           <h2>Connect your Firebase project</h2>
           <p className="hint">
             No Firebase configuration was found. Copy{" "}
@@ -72,58 +84,79 @@ export default function App() {
 
   if (!ready) {
     return (
-      <div className="app-shell">
-        <p className="hint">Connecting…</p>
+      <div className="boot-screen">
+        <div className="boot-mark">MP</div>
+        <p className="hint">Connecting to Firestore&hellip;</p>
       </div>
     );
   }
 
+  const activeTab = TABS.find((t) => t.id === tab)!;
+
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <div>
-          <h1>Material Planning</h1>
-          <p className="subtitle">
-            Stock, outstanding orders, production plan and material-specific
-            lead time, in one place.
-          </p>
+      <aside className="app-sidebar">
+        <div className="brand">
+          <span className="brand-mark">MP</span>
+          <div className="brand-text">
+            <span className="brand-name">Material Planning</span>
+            <span className="brand-tag">Supply &amp; Ops Console</span>
+          </div>
         </div>
-      </header>
 
-      <nav className="tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={t.id === tab ? "tab active" : "tab"}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+        <nav className="side-nav">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className={t.id === tab ? "side-link active" : "side-link"}
+              onClick={() => setTab(t.id)}
+            >
+              <span className="side-link-code">{t.code}</span>
+              <span className="side-link-text">
+                <span className="side-link-label">{t.label}</span>
+                <span className="side-link-desc">{t.description}</span>
+              </span>
+            </button>
+          ))}
+        </nav>
 
-      <main className="app-main">
-        {tab === "planning" && (
-          <PlanningDashboard
-            materials={materials}
-            purchaseOrders={purchaseOrders}
-            productionPlan={productionPlan}
-          />
-        )}
-        {tab === "materials" && <MaterialsPage materials={materials} />}
-        {tab === "orders" && (
-          <PurchaseOrdersPage
-            materials={materials}
-            purchaseOrders={purchaseOrders}
-          />
-        )}
-        {tab === "plan" && (
-          <ProductionPlanPage
-            materials={materials}
-            productionPlan={productionPlan}
-          />
-        )}
-      </main>
+        <div className="sidebar-footer">
+          <span className="status-dot" />
+          <span>Firestore connected</span>
+        </div>
+      </aside>
+
+      <div className="app-body">
+        <header className="app-header">
+          <div className="header-eyebrow">
+            {activeTab.code} / {String(TABS.length).padStart(2, "0")}
+          </div>
+          <h1>{activeTab.label}</h1>
+        </header>
+
+        <main className="app-main">
+          {tab === "planning" && (
+            <PlanningDashboard
+              materials={materials}
+              purchaseOrders={purchaseOrders}
+              productionPlan={productionPlan}
+            />
+          )}
+          {tab === "materials" && <MaterialsPage materials={materials} />}
+          {tab === "orders" && (
+            <PurchaseOrdersPage
+              materials={materials}
+              purchaseOrders={purchaseOrders}
+            />
+          )}
+          {tab === "plan" && (
+            <ProductionPlanPage
+              materials={materials}
+              productionPlan={productionPlan}
+            />
+          )}
+        </main>
+      </div>
     </div>
   );
 }
