@@ -6,6 +6,9 @@ A 3D driving/racing mobile game (iOS/Android) built with Unity.
 
 - **`unity/`** - the Unity project source (currently `Assets/Scripts/` only -
   see `unity/README.md` for why, and for full setup/build instructions).
+- **`erp/`** - a material planning web app (React + Firebase/Firestore) for
+  tracking per-material lead time, warehouse stock, outstanding purchase
+  orders and the production plan - see `erp/README.md` for setup.
 
 The game is a single-player time trial: drive a placeholder car around a
 procedurally-built oval track for 3 laps, with a live speed/lap/best-lap HUD
