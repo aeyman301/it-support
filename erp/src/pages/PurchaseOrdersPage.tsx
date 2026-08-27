@@ -7,6 +7,9 @@ import {
   updatePurchaseOrder,
 } from "../lib/repo";
 import { computeExpectedArrival, isoToday } from "../lib/mrp";
+import { usePagedSearch } from "../lib/pagination";
+import { Pagination } from "../components/Pagination";
+import { SearchBox } from "../components/SearchBox";
 
 function emptyForm(materials: Material[]) {
   return {
@@ -136,6 +139,15 @@ export function PurchaseOrdersPage({
     (po) => statusFilter === "all" || po.status === statusFilter,
   );
 
+  const matchesPO = (po: PurchaseOrder, q: string) =>
+    po.poNumber.toLowerCase().includes(q) ||
+    po.status.includes(q) ||
+    (materialById.get(po.materialId)?.code.toLowerCase().includes(q) ?? false) ||
+    (materialById.get(po.materialId)?.name.toLowerCase().includes(q) ?? false);
+
+  const { query, setQuery, page, setPage, pageCount, pageItems, total } =
+    usePagedSearch(visible, matchesPO);
+
   return (
     <div className="page">
       <section className="card">
@@ -254,6 +266,11 @@ export function PurchaseOrdersPage({
       <section className="card">
         <div className="card-header-row">
           <h2>Purchase orders ({visible.length})</h2>
+          <SearchBox
+            value={query}
+            onChange={setQuery}
+            placeholder="Search PO #, material…"
+          />
           <select
             value={statusFilter}
             onChange={(e) =>
@@ -280,7 +297,7 @@ export function PurchaseOrdersPage({
               </tr>
             </thead>
             <tbody>
-              {visible.map((po) => (
+              {pageItems.map((po) => (
                 <tr key={po.id}>
                   <td>{po.poNumber}</td>
                   <td>{materialById.get(po.materialId)?.code ?? "—"}</td>
@@ -312,9 +329,17 @@ export function PurchaseOrdersPage({
                   </td>
                 </tr>
               )}
+              {visible.length > 0 && total === 0 && (
+                <tr>
+                  <td colSpan={7} className="empty">
+                    No purchase orders match "{query}".
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageCount={pageCount} total={total} onChange={setPage} />
       </section>
     </div>
   );

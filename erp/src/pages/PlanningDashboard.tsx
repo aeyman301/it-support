@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Material, ProductionPlanEntry, PurchaseOrder } from "../types";
+import type { Material, MaterialPlan, ProductionPlanEntry, PurchaseOrder } from "../types";
 import { computeAllPlans } from "../lib/mrp";
 import {
   IconAlert,
@@ -8,6 +8,13 @@ import {
   IconLayers,
   IconTruck,
 } from "../components/icons";
+import { usePagedSearch } from "../lib/pagination";
+import { Pagination } from "../components/Pagination";
+import { SearchBox } from "../components/SearchBox";
+
+const matchesPlan = (plan: MaterialPlan, q: string) =>
+  plan.material.code.toLowerCase().includes(q) ||
+  plan.material.name.toLowerCase().includes(q);
 
 export function PlanningDashboard({
   materials,
@@ -33,6 +40,14 @@ export function PlanningDashboard({
   const materialsToOrder = new Set(allSuggestions.map((s) => s.materialId)).size;
   const leadTimeMissingCount = plans.filter((p) => p.leadTimeMissing).length;
   const materialsOk = materials.length - materialsToOrder - leadTimeMissingCount;
+
+  const suggestionsPaged = usePagedSearch(
+    allSuggestions,
+    (s, q) =>
+      s.material.code.toLowerCase().includes(q) ||
+      s.material.name.toLowerCase().includes(q),
+  );
+  const overviewPaged = usePagedSearch(plans, matchesPlan);
 
   function toggle(id: string) {
     setExpanded((prev) => {
@@ -104,7 +119,16 @@ export function PlanningDashboard({
       )}
 
       <section className="card">
-        <h2>What to order, and by when</h2>
+        <div className="card-header-row">
+          <h2>What to order, and by when</h2>
+          {allSuggestions.length > 0 && (
+            <SearchBox
+              value={suggestionsPaged.query}
+              onChange={suggestionsPaged.setQuery}
+              placeholder="Search material…"
+            />
+          )}
+        </div>
         <p className="hint">
           For each material this combines warehouse stock, outstanding
           orders not yet arrived, the production plan, and the material's own
@@ -136,7 +160,7 @@ export function PlanningDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {allSuggestions.map((s, i) => (
+                  {suggestionsPaged.pageItems.map((s, i) => (
                     <tr key={`${s.materialId}-${i}`} className={s.urgent ? "urgent-row" : ""}>
                       <td>
                         {s.material.code} — {s.material.name}
@@ -162,9 +186,22 @@ export function PlanningDashboard({
                       </td>
                     </tr>
                   ))}
+                  {suggestionsPaged.total === 0 && (
+                    <tr>
+                      <td colSpan={6} className="empty">
+                        No materials match "{suggestionsPaged.query}".
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+            <Pagination
+              page={suggestionsPaged.page}
+              pageCount={suggestionsPaged.pageCount}
+              total={suggestionsPaged.total}
+              onChange={suggestionsPaged.setPage}
+            />
             {leadTimeMissingCount > 0 && (
               <p className="hint hint-inline">
                 {leadTimeMissingCount} more material(s) are missing a lead
@@ -177,7 +214,14 @@ export function PlanningDashboard({
       </section>
 
       <section className="card">
-        <h2>Material overview</h2>
+        <div className="card-header-row">
+          <h2>Material overview</h2>
+          <SearchBox
+            value={overviewPaged.query}
+            onChange={overviewPaged.setQuery}
+            placeholder="Search code, name…"
+          />
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -191,7 +235,7 @@ export function PlanningDashboard({
               </tr>
             </thead>
             <tbody>
-              {plans.map((plan) => (
+              {overviewPaged.pageItems.map((plan) => (
                 <tr key={plan.material.id}>
                   <td>
                     {plan.material.code} — {plan.material.name}
@@ -220,9 +264,22 @@ export function PlanningDashboard({
                   </td>
                 </tr>
               )}
+              {plans.length > 0 && overviewPaged.total === 0 && (
+                <tr>
+                  <td colSpan={6} className="empty">
+                    No materials match "{overviewPaged.query}".
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={overviewPaged.page}
+          pageCount={overviewPaged.pageCount}
+          total={overviewPaged.total}
+          onChange={overviewPaged.setPage}
+        />
       </section>
 
       {plans

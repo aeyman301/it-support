@@ -11,8 +11,8 @@
 
 import { readFileSync } from "node:fs";
 import { initializeApp } from "firebase/app";
-import { getAuth, signInAnonymously } from "firebase/auth";
-import { getFirestore, doc, writeBatch } from "firebase/firestore";
+import { connectAuthEmulator, getAuth, signInAnonymously } from "firebase/auth";
+import { connectFirestoreEmulator, getFirestore, doc, writeBatch } from "firebase/firestore";
 
 const filePath = process.argv[2];
 if (!filePath) {
@@ -43,6 +43,11 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+if (process.env.VITE_USE_FIRESTORE_EMULATOR === "true") {
+  connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectAuthEmulator(auth, "http://127.0.0.1:9099");
+}
 
 await signInAnonymously(auth);
 

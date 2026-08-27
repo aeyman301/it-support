@@ -73,6 +73,15 @@ export function IconCheck({ className }: IconProps) {
   );
 }
 
+export function IconSearch({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="m20 20-4.3-4.3" />
+    </svg>
+  );
+}
+
 export function IconLayers({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

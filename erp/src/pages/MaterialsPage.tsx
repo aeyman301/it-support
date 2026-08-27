@@ -5,6 +5,14 @@ import {
   deleteMaterial,
   updateMaterial,
 } from "../lib/repo";
+import { usePagedSearch } from "../lib/pagination";
+import { Pagination } from "../components/Pagination";
+import { SearchBox } from "../components/SearchBox";
+
+const matchesMaterial = (m: Material, q: string) =>
+  m.code.toLowerCase().includes(q) ||
+  m.name.toLowerCase().includes(q) ||
+  m.uom.toLowerCase().includes(q);
 
 const emptyForm = {
   code: "",
@@ -22,6 +30,8 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { query, setQuery, page, setPage, pageCount, pageItems, total } =
+    usePagedSearch(materials, matchesMaterial);
 
   function startEdit(m: Material) {
     setEditingId(m.id);
@@ -173,7 +183,14 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
       </section>
 
       <section className="card">
-        <h2>Materials ({materials.length})</h2>
+        <div className="card-header-row">
+          <h2>Materials ({materials.length})</h2>
+          <SearchBox
+            value={query}
+            onChange={setQuery}
+            placeholder="Search code, name, UoM…"
+          />
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -189,7 +206,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               </tr>
             </thead>
             <tbody>
-              {materials.map((m) => (
+              {pageItems.map((m) => (
                 <tr key={m.id}>
                   <td>{m.code}</td>
                   <td>{m.name}</td>
@@ -215,9 +232,17 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
                   </td>
                 </tr>
               )}
+              {materials.length > 0 && total === 0 && (
+                <tr>
+                  <td colSpan={8} className="empty">
+                    No materials match "{query}".
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageCount={pageCount} total={total} onChange={setPage} />
       </section>
     </div>
   );

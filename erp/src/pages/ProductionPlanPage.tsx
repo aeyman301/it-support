@@ -6,6 +6,9 @@ import {
   updateProductionPlanEntry,
 } from "../lib/repo";
 import { isoToday } from "../lib/mrp";
+import { usePagedSearch } from "../lib/pagination";
+import { Pagination } from "../components/Pagination";
+import { SearchBox } from "../components/SearchBox";
 
 function emptyForm(materials: Material[]) {
   return {
@@ -86,6 +89,14 @@ export function ProductionPlanPage({
     a.neededByDate.localeCompare(b.neededByDate),
   );
 
+  const matchesEntry = (entry: ProductionPlanEntry, q: string) =>
+    (materialById.get(entry.materialId)?.code.toLowerCase().includes(q) ?? false) ||
+    (materialById.get(entry.materialId)?.name.toLowerCase().includes(q) ?? false) ||
+    (entry.source?.toLowerCase().includes(q) ?? false);
+
+  const { query, setQuery, page, setPage, pageCount, pageItems, total } =
+    usePagedSearch(sorted, matchesEntry);
+
   return (
     <div className="page">
       <section className="card">
@@ -159,7 +170,14 @@ export function ProductionPlanPage({
       </section>
 
       <section className="card">
-        <h2>Production plan ({sorted.length})</h2>
+        <div className="card-header-row">
+          <h2>Production plan ({sorted.length})</h2>
+          <SearchBox
+            value={query}
+            onChange={setQuery}
+            placeholder="Search material, source…"
+          />
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -172,7 +190,7 @@ export function ProductionPlanPage({
               </tr>
             </thead>
             <tbody>
-              {sorted.map((entry) => (
+              {pageItems.map((entry) => (
                 <tr key={entry.id}>
                   <td>{entry.neededByDate}</td>
                   <td>{materialById.get(entry.materialId)?.code ?? "—"}</td>
@@ -198,9 +216,17 @@ export function ProductionPlanPage({
                   </td>
                 </tr>
               )}
+              {sorted.length > 0 && total === 0 && (
+                <tr>
+                  <td colSpan={5} className="empty">
+                    No demand entries match "{query}".
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
+        <Pagination page={page} pageCount={pageCount} total={total} onChange={setPage} />
       </section>
     </div>
   );
