@@ -606,6 +606,32 @@ tbody tr:hover td {
   background: var(--delayed-bg);
 }
 
+/* ---------- inline expandable detail row ---------- */
+
+.detail-row td {
+  background: var(--surface-alt);
+  padding: 14px 16px;
+  white-space: normal;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.detail-table th {
+  background: var(--surface-alt);
+}
+
+.detail-table td,
+.detail-table th {
+  white-space: nowrap;
+}
+
 /* ---------- search + pagination ---------- */
 
 .search-box {

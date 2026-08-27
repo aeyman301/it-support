@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { Material, MaterialPlan, ProductionPlanEntry, PurchaseOrder } from "../types";
 import { computeAllPlans } from "../lib/mrp";
 import {
@@ -49,6 +49,11 @@ export function PlanningDashboard({
   );
   const overviewPaged = usePagedSearch(plans, matchesPlan);
 
+  const planById = useMemo(
+    () => new Map(plans.map((p) => [p.material.id, p])),
+    [plans],
+  );
+
   function toggle(id: string) {
     setExpanded((prev) => {
       const next = new Set(prev);
@@ -56,6 +61,44 @@ export function PlanningDashboard({
       else next.add(id);
       return next;
     });
+  }
+
+  function renderDetailRow(materialId: string, colSpan: number) {
+    if (!expanded.has(materialId)) return null;
+    const plan = planById.get(materialId);
+    if (!plan) return null;
+    return (
+      <tr className="detail-row">
+        <td colSpan={colSpan}>
+          {plan.buckets.length === 0 ? (
+            <p className="empty">
+              No incoming orders or demand scheduled for this material.
+            </p>
+          ) : (
+            <table className="detail-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Incoming</th>
+                  <th>Demand</th>
+                  <th>Projected balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {plan.buckets.map((b) => (
+                  <tr key={b.date} className={b.belowSafetyStock ? "urgent-row" : ""}>
+                    <td>{b.date}</td>
+                    <td>{b.incoming ? `+${b.incoming}` : "—"}</td>
+                    <td>{b.demand ? `-${b.demand}` : "—"}</td>
+                    <td>{b.projectedBalance}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </td>
+      </tr>
+    );
   }
 
   const outstandingByMaterial = useMemo(() => {
@@ -161,30 +204,33 @@ export function PlanningDashboard({
                 </thead>
                 <tbody>
                   {suggestionsPaged.pageItems.map((s, i) => (
-                    <tr key={`${s.materialId}-${i}`} className={s.urgent ? "urgent-row" : ""}>
-                      <td>
-                        {s.material.code} — {s.material.name}
-                      </td>
-                      <td>
-                        {s.urgent ? (
-                          <span className="status-badge cancelled">
-                            {s.orderByDate} (overdue)
-                          </span>
-                        ) : (
-                          s.orderByDate
-                        )}
-                      </td>
-                      <td>{s.neededByDate}</td>
-                      <td>
-                        {s.suggestedQty} {s.material.uom}
-                      </td>
-                      <td className="reason-cell">{s.reason}</td>
-                      <td>
-                        <button className="link" onClick={() => toggle(s.material.id)}>
-                          {expanded.has(s.material.id) ? "Hide detail" : "Show detail"}
-                        </button>
-                      </td>
-                    </tr>
+                    <Fragment key={`${s.materialId}-${i}`}>
+                      <tr className={s.urgent ? "urgent-row" : ""}>
+                        <td>
+                          {s.material.code} — {s.material.name}
+                        </td>
+                        <td>
+                          {s.urgent ? (
+                            <span className="status-badge cancelled">
+                              {s.orderByDate} (overdue)
+                            </span>
+                          ) : (
+                            s.orderByDate
+                          )}
+                        </td>
+                        <td>{s.neededByDate}</td>
+                        <td>
+                          {s.suggestedQty} {s.material.uom}
+                        </td>
+                        <td className="reason-cell">{s.reason}</td>
+                        <td>
+                          <button className="link" onClick={() => toggle(s.material.id)}>
+                            {expanded.has(s.material.id) ? "Hide detail" : "Show detail"}
+                          </button>
+                        </td>
+                      </tr>
+                      {renderDetailRow(s.material.id, 6)}
+                    </Fragment>
                   ))}
                   {suggestionsPaged.total === 0 && (
                     <tr>
@@ -236,26 +282,29 @@ export function PlanningDashboard({
             </thead>
             <tbody>
               {overviewPaged.pageItems.map((plan) => (
-                <tr key={plan.material.id}>
-                  <td>
-                    {plan.material.code} — {plan.material.name}
-                  </td>
-                  <td>
-                    {plan.leadTimeMissing ? (
-                      <span className="status-badge outstanding">Not set</span>
-                    ) : (
-                      `${plan.material.leadTimeDays} d`
-                    )}
-                  </td>
-                  <td>{plan.material.onHandQty}</td>
-                  <td>{outstandingByMaterial.get(plan.material.id) ?? 0}</td>
-                  <td>{plan.material.safetyStock}</td>
-                  <td>
-                    <button className="link" onClick={() => toggle(plan.material.id)}>
-                      {expanded.has(plan.material.id) ? "Hide detail" : "Show detail"}
-                    </button>
-                  </td>
-                </tr>
+                <Fragment key={plan.material.id}>
+                  <tr>
+                    <td>
+                      {plan.material.code} — {plan.material.name}
+                    </td>
+                    <td>
+                      {plan.leadTimeMissing ? (
+                        <span className="status-badge outstanding">Not set</span>
+                      ) : (
+                        `${plan.material.leadTimeDays} d`
+                      )}
+                    </td>
+                    <td>{plan.material.onHandQty}</td>
+                    <td>{outstandingByMaterial.get(plan.material.id) ?? 0}</td>
+                    <td>{plan.material.safetyStock}</td>
+                    <td>
+                      <button className="link" onClick={() => toggle(plan.material.id)}>
+                        {expanded.has(plan.material.id) ? "Hide detail" : "Show detail"}
+                      </button>
+                    </td>
+                  </tr>
+                  {renderDetailRow(plan.material.id, 6)}
+                </Fragment>
               ))}
               {plans.length === 0 && (
                 <tr>
@@ -281,44 +330,6 @@ export function PlanningDashboard({
           onChange={overviewPaged.setPage}
         />
       </section>
-
-      {plans
-        .filter((p) => expanded.has(p.material.id))
-        .map((plan) => (
-          <section className="card" key={plan.material.id}>
-            <h3>
-              {plan.material.code} — {plan.material.name}: projected balance
-            </h3>
-            {plan.buckets.length === 0 ? (
-              <p className="empty">
-                No incoming orders or demand scheduled for this material.
-              </p>
-            ) : (
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Incoming</th>
-                      <th>Demand</th>
-                      <th>Projected balance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {plan.buckets.map((b) => (
-                      <tr key={b.date} className={b.belowSafetyStock ? "urgent-row" : ""}>
-                        <td>{b.date}</td>
-                        <td>{b.incoming ? `+${b.incoming}` : "—"}</td>
-                        <td>{b.demand ? `-${b.demand}` : "—"}</td>
-                        <td>{b.projectedBalance}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        ))}
     </div>
   );
 }
