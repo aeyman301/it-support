@@ -73,6 +73,25 @@ export function IconCheck({ className }: IconProps) {
   );
 }
 
+export function IconMenu({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3 6h18" />
+      <path d="M3 12h18" />
+      <path d="M3 18h18" />
+    </svg>
+  );
+}
+
+export function IconX({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="m5 5 14 14" />
+      <path d="m19 5-14 14" />
+    </svg>
+  );
+}
+
 export function IconSearch({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

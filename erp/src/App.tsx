@@ -10,7 +10,14 @@ import { PlanningDashboard } from "./pages/PlanningDashboard";
 import { MaterialsPage } from "./pages/MaterialsPage";
 import { PurchaseOrdersPage } from "./pages/PurchaseOrdersPage";
 import { ProductionPlanPage } from "./pages/ProductionPlanPage";
-import { IconGrid, IconBox, IconTruck, IconClipboard } from "./components/icons";
+import {
+  IconGrid,
+  IconBox,
+  IconTruck,
+  IconClipboard,
+  IconMenu,
+  IconX,
+} from "./components/icons";
 
 type Tab = "planning" | "materials" | "orders" | "plan";
 
@@ -61,6 +68,7 @@ export default function App() {
     [],
   );
   const [ready, setReady] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
   useEffect(() => {
     if (!firebaseConfigured) return;
@@ -106,15 +114,31 @@ export default function App() {
 
   const activeTab = TABS.find((t) => t.id === tab)!;
 
+  function selectTab(id: Tab) {
+    setTab(id);
+    setNavOpen(false);
+  }
+
   return (
     <div className="app-shell">
-      <aside className="app-sidebar">
+      {navOpen && (
+        <div className="mobile-backdrop" onClick={() => setNavOpen(false)} />
+      )}
+
+      <aside className={navOpen ? "app-sidebar mobile-open" : "app-sidebar"}>
         <div className="brand">
           <span className="brand-mark">MP</span>
           <div className="brand-text">
             <span className="brand-eyebrow">PNA Technologies</span>
             <span className="brand-name">Material Planning</span>
           </div>
+          <button
+            className="mobile-nav-close"
+            onClick={() => setNavOpen(false)}
+            aria-label="Close menu"
+          >
+            <IconX />
+          </button>
         </div>
 
         <div className="side-section-label">Workspace</div>
@@ -125,7 +149,7 @@ export default function App() {
               <button
                 key={t.id}
                 className={t.id === tab ? "side-link active" : "side-link"}
-                onClick={() => setTab(t.id)}
+                onClick={() => selectTab(t.id)}
               >
                 <Icon />
                 {t.label}
@@ -144,6 +168,13 @@ export default function App() {
 
       <div className="app-body">
         <div className="top-bar">
+          <button
+            className="mobile-nav-toggle"
+            onClick={() => setNavOpen(true)}
+            aria-label="Open menu"
+          >
+            <IconMenu />
+          </button>
           <div className="breadcrumb">
             Material Planning / <strong>{activeTab.label}</strong>
           </div>

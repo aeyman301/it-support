@@ -209,7 +209,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               {pageItems.map((m) => (
                 <tr key={m.id}>
                   <td>{m.code}</td>
-                  <td>{m.name}</td>
+                  <td className="cell-wrap">{m.name}</td>
                   <td>{m.uom}</td>
                   <td>{m.leadTimeDays} d</td>
                   <td>{m.safetyStock}</td>

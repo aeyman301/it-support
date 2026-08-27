@@ -206,7 +206,7 @@ export function PlanningDashboard({
                   {suggestionsPaged.pageItems.map((s, i) => (
                     <Fragment key={`${s.materialId}-${i}`}>
                       <tr className={s.urgent ? "urgent-row" : ""}>
-                        <td>
+                        <td className="cell-wrap">
                           {s.material.code} — {s.material.name}
                         </td>
                         <td>
@@ -284,7 +284,7 @@ export function PlanningDashboard({
               {overviewPaged.pageItems.map((plan) => (
                 <Fragment key={plan.material.id}>
                   <tr>
-                    <td>
+                    <td className="cell-wrap">
                       {plan.material.code} — {plan.material.name}
                     </td>
                     <td>
