@@ -69,4 +69,6 @@ export interface MaterialPlan {
   material: Material;
   buckets: PlanningBucket[];
   suggestions: OrderSuggestion[];
+  /** True when leadTimeDays isn't configured yet, so order-by dates can't be computed. */
+  leadTimeMissing: boolean;
 }

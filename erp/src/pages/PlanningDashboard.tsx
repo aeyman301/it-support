@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import type { Material, ProductionPlanEntry, PurchaseOrder } from "../types";
 import { computeAllPlans } from "../lib/mrp";
-import { IconAlert, IconBox, IconCheck, IconTruck } from "../components/icons";
+import {
+  IconAlert,
+  IconBox,
+  IconCheck,
+  IconLayers,
+  IconTruck,
+} from "../components/icons";
 
 export function PlanningDashboard({
   materials,
@@ -25,7 +31,8 @@ export function PlanningDashboard({
 
   const urgentCount = allSuggestions.filter((s) => s.urgent).length;
   const materialsToOrder = new Set(allSuggestions.map((s) => s.materialId)).size;
-  const materialsOk = materials.length - materialsToOrder;
+  const leadTimeMissingCount = plans.filter((p) => p.leadTimeMissing).length;
+  const materialsOk = materials.length - materialsToOrder - leadTimeMissingCount;
 
   function toggle(id: string) {
     setExpanded((prev) => {
@@ -83,6 +90,16 @@ export function PlanningDashboard({
             <span className="stat-card-value">{materialsOk}</span>
             <span className="stat-card-caption">Stock + incoming meet demand</span>
           </div>
+          {leadTimeMissingCount > 0 && (
+            <div className="stat-card">
+              <span className="stat-icon tone-running">
+                <IconLayers />
+              </span>
+              <span className="stat-card-label">Lead time not set</span>
+              <span className="stat-card-value">{leadTimeMissingCount}</span>
+              <span className="stat-card-caption">Can't suggest order dates yet</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -100,8 +117,9 @@ export function PlanningDashboard({
           </p>
         ) : allSuggestions.length === 0 ? (
           <p className="empty">
-            No shortfalls projected — stock and outstanding orders cover the
-            current production plan.
+            {leadTimeMissingCount > 0
+              ? `No shortfalls projected for materials with a lead time set. ${leadTimeMissingCount} material(s) still need a lead time before they can show up here — see Material overview below.`
+              : "No shortfalls projected — stock and outstanding orders cover the current production plan."}
           </p>
         ) : (
           <>
@@ -147,6 +165,13 @@ export function PlanningDashboard({
                 </tbody>
               </table>
             </div>
+            {leadTimeMissingCount > 0 && (
+              <p className="hint hint-inline">
+                {leadTimeMissingCount} more material(s) are missing a lead
+                time and are excluded from this list until it's set — see
+                Material overview below.
+              </p>
+            )}
           </>
         )}
       </section>
@@ -171,7 +196,13 @@ export function PlanningDashboard({
                   <td>
                     {plan.material.code} — {plan.material.name}
                   </td>
-                  <td>{plan.material.leadTimeDays} d</td>
+                  <td>
+                    {plan.leadTimeMissing ? (
+                      <span className="status-badge outstanding">Not set</span>
+                    ) : (
+                      `${plan.material.leadTimeDays} d`
+                    )}
+                  </td>
                   <td>{plan.material.onHandQty}</td>
                   <td>{outstandingByMaterial.get(plan.material.id) ?? 0}</td>
                   <td>{plan.material.safetyStock}</td>

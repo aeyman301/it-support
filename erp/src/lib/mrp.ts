@@ -56,6 +56,11 @@ export function computeMaterialPlan(
     .filter((date) => date >= today)
     .sort();
 
+  // Without a lead time we can't compute a meaningful order-by date, so
+  // surface the material separately instead of guessing (which would either
+  // invent false urgency or hide a real shortfall).
+  const leadTimeMissing = material.leadTimeDays <= 0;
+
   const suggestionArrivals = new Map<string, number>();
   const buckets: PlanningBucket[] = [];
   const suggestions: OrderSuggestion[] = [];
@@ -76,7 +81,7 @@ export function computeMaterialPlan(
     };
     buckets.push(bucket);
 
-    if (bucket.belowSafetyStock) {
+    if (bucket.belowSafetyStock && !leadTimeMissing) {
       const shortfall = material.safetyStock - balance;
       const rawQty = Math.max(shortfall, material.minOrderQty);
       const suggestedQty =
@@ -106,7 +111,7 @@ export function computeMaterialPlan(
     }
   }
 
-  return { material, buckets, suggestions };
+  return { material, buckets, suggestions, leadTimeMissing };
 }
 
 export function computeAllPlans(

@@ -109,6 +109,33 @@ Then set `VITE_USE_FIRESTORE_EMULATOR=true` in `.env.local` (any
 placeholder values are fine for the other `VITE_FIREBASE_*` vars in this
 mode) and run `npm run dev` as usual.
 
+## Importing from the monthly MRP workbook
+
+If the supply chain team's monthly "MRP PLAN ALL" Excel file is available,
+its Raw Stock and MRP sheets can be imported directly instead of entering
+materials by hand:
+
+```bash
+cd erp/scripts
+pip install openpyxl   # once
+python3 extract_mrp_xlsx.py "/path/to/AUG26_MRP_PLAN_ALL_Rev0.xlsx" --out mrp_import.json
+node --env-file=../.env.local import_to_firestore.mjs mrp_import.json
+```
+
+This pulls in materials (code, description, supplier, UOM, current on-hand
+stock — **lead time is not in the source file and always imports as unset**,
+so it still needs to be filled in per material), outstanding orders (from
+the MRP sheet's monthly incoming schedule), and production plan demand
+(from its monthly usage forecast). Re-running with a newer month's file is
+safe — every imported record uses a deterministic ID (part code, or part
+code + month), so it upserts instead of duplicating. Use `extract_mrp_xlsx.py
+--limit N` to try a small batch first.
+
+The planning dashboard treats a material with no lead time set as "not yet
+configured" rather than guessing — it won't appear in the order-suggestions
+list (which would otherwise be misleading), and instead shows up in a
+separate "Lead time not set" count until you fill it in.
+
 ## Deploying
 
 ```bash
