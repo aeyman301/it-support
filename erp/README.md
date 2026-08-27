@@ -109,6 +109,18 @@ Then set `VITE_USE_FIRESTORE_EMULATOR=true` in `.env.local` (any
 placeholder values are fine for the other `VITE_FIREBASE_*` vars in this
 mode) and run `npm run dev` as usual.
 
+## Bulk-updating lead times from a spreadsheet
+
+The Materials & Lead Time page has an **"Import lead times from a
+spreadsheet"** card: upload a CSV export of any lead-time spreadsheet (in
+Excel or Google Sheets, File → Save As / Download → CSV) and it auto-detects
+which column holds the material code, lead time, safety stock, etc. — you
+can adjust the mapping before importing. Rows are matched to existing
+materials by code; matches are updated, unmatched codes are reported but
+skipped (no new materials are created). Only CSV is supported, not `.xlsx`
+directly — the only real Excel-parsing library for browsers has unpatched
+security advisories, so it isn't used here.
+
 ## Importing from the monthly MRP workbook
 
 If the supply chain team's monthly "MRP PLAN ALL" Excel file is available,

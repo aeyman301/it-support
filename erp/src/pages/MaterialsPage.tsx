@@ -8,6 +8,7 @@ import {
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
+import { MaterialCsvImport } from "../components/MaterialCsvImport";
 
 const matchesMaterial = (m: Material, q: string) =>
   m.code.toLowerCase().includes(q) ||
@@ -181,6 +182,8 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
           </div>
         </form>
       </section>
+
+      <MaterialCsvImport materials={materials} />
 
       <section className="card">
         <div className="card-header-row">
