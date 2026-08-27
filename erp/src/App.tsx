@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { authReady, firebaseConfigured } from "./lib/firebase";
 import {
   watchMaterials,
@@ -10,35 +10,48 @@ import { PlanningDashboard } from "./pages/PlanningDashboard";
 import { MaterialsPage } from "./pages/MaterialsPage";
 import { PurchaseOrdersPage } from "./pages/PurchaseOrdersPage";
 import { ProductionPlanPage } from "./pages/ProductionPlanPage";
+import { IconGrid, IconBox, IconTruck, IconClipboard } from "./components/icons";
 
 type Tab = "planning" | "materials" | "orders" | "plan";
 
-const TABS: { id: Tab; code: string; label: string; description: string }[] = [
+const TABS: {
+  id: Tab;
+  label: string;
+  description: string;
+  icon: ComponentType<{ className?: string }>;
+}[] = [
   {
     id: "planning",
-    code: "01",
     label: "Planning Dashboard",
-    description: "Order signals",
+    description: "What to order, and by when.",
+    icon: IconGrid,
   },
   {
     id: "materials",
-    code: "02",
     label: "Materials & Lead Time",
-    description: "Master data",
+    description: "Master data, stock and lead time per material.",
+    icon: IconBox,
   },
   {
     id: "orders",
-    code: "03",
     label: "Outstanding Orders",
-    description: "Incoming stock",
+    description: "Purchase orders placed but not yet received.",
+    icon: IconTruck,
   },
   {
     id: "plan",
-    code: "04",
     label: "Production Plan",
-    description: "Demand",
+    description: "What production needs, and by when.",
+    icon: IconClipboard,
   },
 ];
+
+const dateMeta = new Intl.DateTimeFormat("en-US", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+}).format(new Date());
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("planning");
@@ -99,26 +112,29 @@ export default function App() {
         <div className="brand">
           <span className="brand-mark">MP</span>
           <div className="brand-text">
+            <span className="brand-eyebrow">PNA Technologies</span>
             <span className="brand-name">Material Planning</span>
-            <span className="brand-tag">Supply &amp; Ops Console</span>
           </div>
         </div>
 
+        <div className="side-section-label">Workspace</div>
         <nav className="side-nav">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={t.id === tab ? "side-link active" : "side-link"}
-              onClick={() => setTab(t.id)}
-            >
-              <span className="side-link-code">{t.code}</span>
-              <span className="side-link-text">
-                <span className="side-link-label">{t.label}</span>
-                <span className="side-link-desc">{t.description}</span>
-              </span>
-            </button>
-          ))}
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                className={t.id === tab ? "side-link active" : "side-link"}
+                onClick={() => setTab(t.id)}
+              >
+                <Icon />
+                {t.label}
+              </button>
+            );
+          })}
         </nav>
+
+        <div className="sidebar-spacer" />
 
         <div className="sidebar-footer">
           <span className="status-dot" />
@@ -127,12 +143,17 @@ export default function App() {
       </aside>
 
       <div className="app-body">
-        <header className="app-header">
-          <div className="header-eyebrow">
-            {activeTab.code} / {String(TABS.length).padStart(2, "0")}
+        <div className="top-bar">
+          <div className="breadcrumb">
+            Material Planning / <strong>{activeTab.label}</strong>
           </div>
+        </div>
+
+        <div className="page-header">
+          <div className="page-meta">{dateMeta}</div>
           <h1>{activeTab.label}</h1>
-        </header>
+          <p className="hint">{activeTab.description}</p>
+        </div>
 
         <main className="app-main">
           {tab === "planning" && (

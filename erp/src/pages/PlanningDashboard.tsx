@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Material, ProductionPlanEntry, PurchaseOrder } from "../types";
 import { computeAllPlans } from "../lib/mrp";
+import { IconAlert, IconBox, IconCheck, IconTruck } from "../components/icons";
 
 export function PlanningDashboard({
   materials,
@@ -23,6 +24,8 @@ export function PlanningDashboard({
     .sort((a, b) => a.orderByDate.localeCompare(b.orderByDate));
 
   const urgentCount = allSuggestions.filter((s) => s.urgent).length;
+  const materialsToOrder = new Set(allSuggestions.map((s) => s.materialId)).size;
+  const materialsOk = materials.length - materialsToOrder;
 
   function toggle(id: string) {
     setExpanded((prev) => {
@@ -44,6 +47,45 @@ export function PlanningDashboard({
 
   return (
     <div className="page">
+      {materials.length > 0 && (
+        <div className="stat-grid">
+          <div className="stat-card">
+            <span className="stat-icon">
+              <IconBox />
+            </span>
+            <span className="stat-card-label">Materials tracked</span>
+            <span className="stat-card-value">{materials.length}</span>
+            <span className="stat-card-caption">In master data</span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-icon tone-running">
+              <IconTruck />
+            </span>
+            <span className="stat-card-label">Need a new order</span>
+            <span className="stat-card-value">{materialsToOrder}</span>
+            <span className="stat-card-caption">Projected to fall short</span>
+          </div>
+          <div className="stat-card">
+            <span className={`stat-icon ${urgentCount > 0 ? "tone-delayed" : "tone-done"}`}>
+              <IconAlert />
+            </span>
+            <span className="stat-card-label">Urgent — order today</span>
+            <span className="stat-card-value">{urgentCount}</span>
+            <span className={`stat-card-caption ${urgentCount > 0 ? "tone-delayed" : ""}`}>
+              {urgentCount > 0 ? "Order-by date already passed" : "Nothing overdue"}
+            </span>
+          </div>
+          <div className="stat-card">
+            <span className="stat-icon tone-done">
+              <IconCheck />
+            </span>
+            <span className="stat-card-label">Fully covered</span>
+            <span className="stat-card-value">{materialsOk}</span>
+            <span className="stat-card-caption">Stock + incoming meet demand</span>
+          </div>
+        </div>
+      )}
+
       <section className="card">
         <h2>What to order, and by when</h2>
         <p className="hint">
@@ -63,16 +105,6 @@ export function PlanningDashboard({
           </p>
         ) : (
           <>
-            <div className="summary-row">
-              <div className="stat">
-                <span className="stat-value">{allSuggestions.length}</span>
-                <span className="stat-label">materials to order</span>
-              </div>
-              <div className={`stat ${urgentCount > 0 ? "stat-urgent" : ""}`}>
-                <span className="stat-value">{urgentCount}</span>
-                <span className="stat-label">urgent (order today)</span>
-              </div>
-            </div>
             <div className="table-wrap">
               <table>
                 <thead>
