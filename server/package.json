@@ -1,0 +1,13 @@
+{
+  "name": "sandbox-coop-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Realtime co-op sync server for the Sandbox Builder mobile game",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "socket.io": "^4.8.1"
+  }
+}
