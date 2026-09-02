@@ -18,6 +18,7 @@ import {
   IconMenu,
   IconX,
 } from "./components/icons";
+import pnaLogo from "./assets/pna-logo.png";
 
 type Tab = "planning" | "materials" | "orders" | "plan";
 
@@ -87,7 +88,7 @@ export default function App() {
   if (!firebaseConfigured) {
     return (
       <div className="boot-screen">
-        <img className="boot-mark" src="/pna-logo.png" alt="PNA Technologies" />
+        <img className="boot-mark" src={pnaLogo} alt="PNA Technologies" />
         <div className="card boot-card">
           <h2>Connect your Firebase project</h2>
           <p className="hint">
@@ -106,7 +107,7 @@ export default function App() {
   if (!ready) {
     return (
       <div className="boot-screen">
-        <img className="boot-mark" src="/pna-logo.png" alt="PNA Technologies" />
+        <img className="boot-mark" src={pnaLogo} alt="PNA Technologies" />
         <p className="hint">Connecting to Firestore&hellip;</p>
       </div>
     );
@@ -127,7 +128,7 @@ export default function App() {
 
       <aside className={navOpen ? "app-sidebar mobile-open" : "app-sidebar"}>
         <div className="brand">
-          <img className="brand-mark" src="/pna-logo.png" alt="PNA Technologies" />
+          <img className="brand-mark" src={pnaLogo} alt="PNA Technologies" />
           <div className="brand-text">
             <span className="brand-eyebrow">PNA Technologies</span>
             <span className="brand-name">Material Planning</span>
