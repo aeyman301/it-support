@@ -82,18 +82,13 @@ code {
 }
 
 .boot-mark {
-  width: 52px;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 1px;
-  color: var(--sidebar-bg);
+  height: 40px;
+  width: auto;
+  display: block;
+  padding: 12px 16px;
   background: #ffffff;
   border-radius: 12px;
+  object-fit: contain;
 }
 
 .boot-screen > .hint {
@@ -155,18 +150,14 @@ code {
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
+  height: 28px;
+  width: auto;
   flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--mono);
-  font-weight: 700;
-  font-size: 13px;
-  color: var(--sidebar-bg);
+  display: block;
+  padding: 6px 8px;
   background: #ffffff;
-  border-radius: 10px;
+  border-radius: 8px;
+  object-fit: contain;
 }
 
 .brand-text {

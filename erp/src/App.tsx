@@ -87,7 +87,7 @@ export default function App() {
   if (!firebaseConfigured) {
     return (
       <div className="boot-screen">
-        <div className="boot-mark">MP</div>
+        <img className="boot-mark" src="/pna-logo.png" alt="PNA Technologies" />
         <div className="card boot-card">
           <h2>Connect your Firebase project</h2>
           <p className="hint">
@@ -106,7 +106,7 @@ export default function App() {
   if (!ready) {
     return (
       <div className="boot-screen">
-        <div className="boot-mark">MP</div>
+        <img className="boot-mark" src="/pna-logo.png" alt="PNA Technologies" />
         <p className="hint">Connecting to Firestore&hellip;</p>
       </div>
     );
@@ -127,7 +127,7 @@ export default function App() {
 
       <aside className={navOpen ? "app-sidebar mobile-open" : "app-sidebar"}>
         <div className="brand">
-          <span className="brand-mark">MP</span>
+          <img className="brand-mark" src="/pna-logo.png" alt="PNA Technologies" />
           <div className="brand-text">
             <span className="brand-eyebrow">PNA Technologies</span>
             <span className="brand-name">Material Planning</span>
