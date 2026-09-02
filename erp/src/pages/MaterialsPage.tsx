@@ -13,7 +13,8 @@ import { MaterialCsvImport } from "../components/MaterialCsvImport";
 const matchesMaterial = (m: Material, q: string) =>
   m.code.toLowerCase().includes(q) ||
   m.name.toLowerCase().includes(q) ||
-  m.uom.toLowerCase().includes(q);
+  m.uom.toLowerCase().includes(q) ||
+  (m.supplier?.toLowerCase().includes(q) ?? false);
 
 const emptyForm = {
   code: "",
@@ -23,6 +24,8 @@ const emptyForm = {
   safetyStock: 0,
   minOrderQty: 1,
   onHandQty: 0,
+  supplier: "",
+  shipFrom: "",
   notes: "",
 };
 
@@ -44,6 +47,8 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
       safetyStock: m.safetyStock,
       minOrderQty: m.minOrderQty,
       onHandQty: m.onHandQty,
+      supplier: m.supplier ?? "",
+      shipFrom: m.shipFrom ?? "",
       notes: m.notes ?? "",
     });
   }
@@ -162,6 +167,22 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               }
             />
           </label>
+          <label>
+            Supplier
+            <input
+              value={form.supplier}
+              onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+              placeholder="Supplier name"
+            />
+          </label>
+          <label>
+            Ships from
+            <input
+              value={form.shipFrom}
+              onChange={(e) => setForm({ ...form, shipFrom: e.target.value })}
+              placeholder="City, country"
+            />
+          </label>
           <label className="span-2">
             Notes
             <input
@@ -200,6 +221,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               <tr>
                 <th>Code</th>
                 <th>Name</th>
+                <th>Supplier</th>
                 <th>UoM</th>
                 <th>Lead time</th>
                 <th>Safety stock</th>
@@ -213,6 +235,21 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
                 <tr key={m.id}>
                   <td>{m.code}</td>
                   <td className="cell-wrap">{m.name}</td>
+                  <td className="cell-wrap">
+                    {m.supplier ? (
+                      <>
+                        {m.supplier}
+                        {m.shipFrom && (
+                          <>
+                            <br />
+                            <span className="cell-subtext">{m.shipFrom}</span>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      "—"
+                    )}
+                  </td>
                   <td>{m.uom}</td>
                   <td>{m.leadTimeDays} d</td>
                   <td>{m.safetyStock}</td>
@@ -230,14 +267,14 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               ))}
               {materials.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="empty">
+                  <td colSpan={9} className="empty">
                     No materials yet. Add your first one above.
                   </td>
                 </tr>
               )}
               {materials.length > 0 && total === 0 && (
                 <tr>
-                  <td colSpan={8} className="empty">
+                  <td colSpan={9} className="empty">
                     No materials match "{query}".
                   </td>
                 </tr>

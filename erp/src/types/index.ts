@@ -13,6 +13,9 @@ export interface Material {
   minOrderQty: number;
   /** Quantity currently physically at the warehouse. */
   onHandQty: number;
+  supplier?: string;
+  /** City/country the material ships from, e.g. "SHIMIZU, JAPAN". */
+  shipFrom?: string;
   notes?: string;
   updatedAt?: number;
 }

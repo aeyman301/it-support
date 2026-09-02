@@ -10,7 +10,9 @@ type FieldKey =
   | "leadTimeDays"
   | "safetyStock"
   | "minOrderQty"
-  | "onHandQty";
+  | "onHandQty"
+  | "supplier"
+  | "shipFrom";
 
 const FIELD_LABELS: Record<FieldKey, string> = {
   code: "Material code",
@@ -20,6 +22,8 @@ const FIELD_LABELS: Record<FieldKey, string> = {
   safetyStock: "Safety stock",
   minOrderQty: "Min order qty",
   onHandQty: "On-hand qty",
+  supplier: "Supplier",
+  shipFrom: "Ships from",
 };
 
 const FIELD_ALIASES: Record<FieldKey, string[]> = {
@@ -54,6 +58,15 @@ const FIELD_ALIASES: Record<FieldKey, string[]> = {
     "stock",
     "current stock",
     "quantity on hand",
+  ],
+  supplier: ["supplier", "supplier name", "vendor"],
+  shipFrom: [
+    "ships from",
+    "ship from",
+    "shipping point",
+    "shipping origin",
+    "origin",
+    "port of origin",
   ],
 };
 
