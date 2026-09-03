@@ -36,8 +36,8 @@ const TABS: {
   },
   {
     id: "materials",
-    label: "Materials & Lead Time",
-    description: "Master data, stock and lead time per material.",
+    label: "BOM & Lead Time",
+    description: "Master data, stock and lead time per BOM item.",
     icon: IconBox,
   },
   {

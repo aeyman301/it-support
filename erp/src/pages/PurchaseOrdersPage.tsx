@@ -80,7 +80,7 @@ export function PurchaseOrdersPage({
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.materialId) {
-      setError("Pick a material.");
+      setError("Pick a BOM item.");
       return;
     }
     if (!form.poNumber.trim()) {
@@ -163,14 +163,14 @@ export function PurchaseOrdersPage({
         </p>
         <form className="form-grid" onSubmit={onSubmit}>
           <label>
-            Material
+            BOM item
             <select
               value={form.materialId}
               onChange={(e) =>
                 setForm({ ...form, materialId: e.target.value })
               }
             >
-              {materials.length === 0 && <option value="">No materials yet</option>}
+              {materials.length === 0 && <option value="">No BOM items yet</option>}
               {materials.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.code} — {m.name}
@@ -220,7 +220,7 @@ export function PurchaseOrdersPage({
           <div className="hint-inline">
             {form.arrivalOverridden
               ? "Manually overridden — "
-              : "Auto-calculated from order date + material lead time — "}
+              : "Auto-calculated from order date + BOM item lead time — "}
             {!form.arrivalOverridden ? null : (
               <button
                 type="button"
@@ -280,7 +280,7 @@ export function PurchaseOrdersPage({
           <SearchBox
             value={query}
             onChange={setQuery}
-            placeholder="Search PO #, material…"
+            placeholder="Search PO #, BOM item…"
           />
           <select
             value={statusFilter}
@@ -302,7 +302,7 @@ export function PurchaseOrdersPage({
             <thead>
               <tr>
                 <th>PO #</th>
-                <th>Material</th>
+                <th>BOM item</th>
                 <th>Order date</th>
                 <th>Qty</th>
                 <th>Expected arrival</th>

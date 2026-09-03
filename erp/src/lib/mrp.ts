@@ -5,10 +5,24 @@ import type {
   OrderSuggestion,
   PlanningBucket,
   ProductionPlanEntry,
+  ProductionPlanItem,
   PurchaseOrder,
 } from "../types";
 
 export const isoToday = () => format(new Date(), "yyyy-MM-dd");
+
+/**
+ * A production plan entry may hold multiple BOM items (current shape), or
+ * be an older single-material doc from before multi-item entries existed
+ * (materialId/qty at the top level instead of an items array).
+ */
+export function getProductionPlanItems(
+  entry: Pick<ProductionPlanEntry, "items" | "materialId" | "qty">,
+): ProductionPlanItem[] {
+  if (entry.items && entry.items.length > 0) return entry.items;
+  if (entry.materialId) return [{ materialId: entry.materialId, qty: entry.qty ?? 0 }];
+  return [];
+}
 
 /** Expected arrival = order date + the material's configured lead time. */
 export function computeExpectedArrival(
@@ -48,7 +62,6 @@ export function computeMaterialPlan(
   const outstanding = purchaseOrders.filter(
     (po) => po.materialId === material.id && po.status === "outstanding",
   );
-  const demands = productionPlan.filter((d) => d.materialId === material.id);
 
   const incomingByDate = new Map<string, number>();
   for (const po of outstanding) {
@@ -59,8 +72,14 @@ export function computeMaterialPlan(
   }
 
   const demandByDate = new Map<string, number>();
-  for (const d of demands) {
-    demandByDate.set(d.neededByDate, (demandByDate.get(d.neededByDate) ?? 0) + d.qty);
+  for (const entry of productionPlan) {
+    for (const item of getProductionPlanItems(entry)) {
+      if (item.materialId !== material.id) continue;
+      demandByDate.set(
+        entry.neededByDate,
+        (demandByDate.get(entry.neededByDate) ?? 0) + item.qty,
+      );
+    }
   }
 
   const dates = Array.from(

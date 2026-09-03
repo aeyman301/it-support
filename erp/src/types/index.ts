@@ -36,15 +36,26 @@ export interface PurchaseOrder {
   updatedAt?: number;
 }
 
+export interface ProductionPlanItem {
+  materialId: string;
+  qty: number;
+}
+
 export interface ProductionPlanEntry {
   id: string;
-  materialId: string;
-  /** Date the material is required by, to feed production/consumption. */
+  /** Name of the product/build this demand is for, e.g. "Harness A-102". */
+  productName?: string;
+  /** BOM items (materials) this entry consumes, each with its own quantity. */
+  items?: ProductionPlanItem[];
+  /** Date the items are required by, to feed production/consumption. */
   neededByDate: string; // ISO date
-  qty: number;
   source?: string; // e.g. sales order / work order reference
   notes?: string;
   updatedAt?: number;
+  // Legacy single-material shape from before multi-item entries existed.
+  // Older Firestore docs may still have these instead of `items`.
+  materialId?: string;
+  qty?: number;
 }
 
 /** One row of the time-phased planning table for a single material. */

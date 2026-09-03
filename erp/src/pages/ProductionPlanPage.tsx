@@ -5,20 +5,17 @@ import {
   deleteProductionPlanEntry,
   updateProductionPlanEntry,
 } from "../lib/repo";
-import { isoToday } from "../lib/mrp";
+import { getProductionPlanItems, isoToday } from "../lib/mrp";
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
 
-function emptyForm(materials: Material[]) {
-  return {
-    materialId: materials[0]?.id ?? "",
-    neededByDate: isoToday(),
-    qty: 1,
-    source: "",
-    notes: "",
-  };
-}
+const emptyDetails = {
+  productName: "",
+  neededByDate: isoToday(),
+  source: "",
+  notes: "",
+};
 
 export function ProductionPlanPage({
   materials,
@@ -27,7 +24,9 @@ export function ProductionPlanPage({
   materials: Material[];
   productionPlan: ProductionPlanEntry[];
 }) {
-  const [form, setForm] = useState(() => emptyForm(materials));
+  const [details, setDetails] = useState(emptyDetails);
+  const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
+  const [pickerQuery, setPickerQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -37,39 +36,79 @@ export function ProductionPlanPage({
     [materials],
   );
 
+  const filteredMaterials = useMemo(() => {
+    const q = pickerQuery.trim().toLowerCase();
+    if (!q) return materials;
+    return materials.filter(
+      (m) =>
+        m.code.toLowerCase().includes(q) || m.name.toLowerCase().includes(q),
+    );
+  }, [materials, pickerQuery]);
+
+  function toggleItem(materialId: string) {
+    setSelectedItems((prev) => {
+      const next = new Map(prev);
+      if (next.has(materialId)) next.delete(materialId);
+      else next.set(materialId, 1);
+      return next;
+    });
+  }
+
+  function setItemQty(materialId: string, qty: number) {
+    setSelectedItems((prev) => new Map(prev).set(materialId, qty));
+  }
+
+  function removeItem(materialId: string) {
+    setSelectedItems((prev) => {
+      const next = new Map(prev);
+      next.delete(materialId);
+      return next;
+    });
+  }
+
   function startEdit(entry: ProductionPlanEntry) {
     setEditingId(entry.id);
-    setForm({
-      materialId: entry.materialId,
+    setDetails({
+      productName: entry.productName ?? "",
       neededByDate: entry.neededByDate,
-      qty: entry.qty,
       source: entry.source ?? "",
       notes: entry.notes ?? "",
     });
+    setSelectedItems(
+      new Map(getProductionPlanItems(entry).map((it) => [it.materialId, it.qty])),
+    );
+    setPickerQuery("");
   }
 
   function resetForm() {
     setEditingId(null);
-    setForm(emptyForm(materials));
+    setDetails(emptyDetails);
+    setSelectedItems(new Map());
+    setPickerQuery("");
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.materialId) {
-      setError("Pick a material.");
+    if (selectedItems.size === 0) {
+      setError("Pick at least one BOM item.");
       return;
     }
-    if (!form.neededByDate) {
+    if (!details.neededByDate) {
       setError("Needed-by date is required.");
       return;
     }
     setError(null);
     setSaving(true);
     try {
+      const items = Array.from(selectedItems, ([materialId, qty]) => ({
+        materialId,
+        qty,
+      }));
+      const payload = { ...details, items };
       if (editingId) {
-        await updateProductionPlanEntry(editingId, form);
+        await updateProductionPlanEntry(editingId, payload);
       } else {
-        await createProductionPlanEntry(form);
+        await createProductionPlanEntry(payload);
       }
       resetForm();
     } catch (err) {
@@ -90,74 +129,138 @@ export function ProductionPlanPage({
   );
 
   const matchesEntry = (entry: ProductionPlanEntry, q: string) =>
-    (materialById.get(entry.materialId)?.code.toLowerCase().includes(q) ?? false) ||
-    (materialById.get(entry.materialId)?.name.toLowerCase().includes(q) ?? false) ||
-    (entry.source?.toLowerCase().includes(q) ?? false);
+    (entry.productName?.toLowerCase().includes(q) ?? false) ||
+    (entry.source?.toLowerCase().includes(q) ?? false) ||
+    getProductionPlanItems(entry).some((it) => {
+      const m = materialById.get(it.materialId);
+      return (
+        (m?.code.toLowerCase().includes(q) ?? false) ||
+        (m?.name.toLowerCase().includes(q) ?? false)
+      );
+    });
 
   const { query, setQuery, page, setPage, pageCount, pageItems, total } =
     usePagedSearch(sorted, matchesEntry);
+
+  function itemsSummary(entry: ProductionPlanEntry) {
+    const items = getProductionPlanItems(entry);
+    if (items.length === 0) return "—";
+    return items
+      .map((it) => `${materialById.get(it.materialId)?.code ?? "?"} ×${it.qty}`)
+      .join(", ");
+  }
 
   return (
     <div className="page">
       <section className="card">
         <h2>{editingId ? "Edit demand" : "Add production demand"}</h2>
         <p className="hint">
-          How much of each material production will consume, and by when.
-          This is compared against stock + outstanding orders to work out
-          what still needs to be purchased.
+          Each product can consume multiple BOM items — pick every item it
+          needs below, with its own quantity. This is compared against stock
+          + outstanding orders to work out what still needs to be purchased.
         </p>
         <form className="form-grid" onSubmit={onSubmit}>
           <label>
-            Material
-            <select
-              value={form.materialId}
-              onChange={(e) => setForm({ ...form, materialId: e.target.value })}
-            >
-              {materials.length === 0 && <option value="">No materials yet</option>}
-              {materials.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.code} — {m.name}
-                </option>
-              ))}
-            </select>
+            Product / build name
+            <input
+              value={details.productName}
+              onChange={(e) =>
+                setDetails({ ...details, productName: e.target.value })
+              }
+              placeholder="e.g. Harness A-102"
+            />
           </label>
           <label>
             Needed by
             <input
               type="date"
-              value={form.neededByDate}
+              value={details.neededByDate}
               onChange={(e) =>
-                setForm({ ...form, neededByDate: e.target.value })
+                setDetails({ ...details, neededByDate: e.target.value })
               }
-            />
-          </label>
-          <label>
-            Quantity
-            <input
-              type="number"
-              min={0}
-              value={form.qty}
-              onChange={(e) => setForm({ ...form, qty: Number(e.target.value) })}
             />
           </label>
           <label>
             Source / reference
             <input
-              value={form.source}
-              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              value={details.source}
+              onChange={(e) => setDetails({ ...details, source: e.target.value })}
               placeholder="Work order / sales order #"
             />
           </label>
           <label className="span-2">
             Notes
             <input
-              value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              value={details.notes}
+              onChange={(e) => setDetails({ ...details, notes: e.target.value })}
             />
           </label>
+
+          <label className="span-full">
+            BOM items *
+            <input
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+              placeholder="Search BOM items to add…"
+            />
+          </label>
+
+          {selectedItems.size > 0 && (
+            <div className="span-full bom-chip-list">
+              {Array.from(selectedItems, ([materialId, qty]) => (
+                <span key={materialId} className="bom-chip">
+                  {materialById.get(materialId)?.code ?? "?"} ×{qty}
+                  <button
+                    type="button"
+                    className="bom-chip-remove"
+                    onClick={() => removeItem(materialId)}
+                    aria-label="Remove"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="span-full bom-picker">
+            {materials.length === 0 && (
+              <p className="empty">No BOM items yet — add some on the BOM page first.</p>
+            )}
+            {materials.length > 0 && filteredMaterials.length === 0 && (
+              <p className="empty">No BOM items match "{pickerQuery}".</p>
+            )}
+            {filteredMaterials.map((m) => {
+              const checked = selectedItems.has(m.id);
+              return (
+                <div key={m.id} className="bom-picker-row">
+                  <label className="bom-picker-check">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => toggleItem(m.id)}
+                    />
+                    <span>
+                      {m.code} — {m.name}
+                    </span>
+                  </label>
+                  {checked && (
+                    <input
+                      type="number"
+                      min={0}
+                      className="bom-picker-qty"
+                      value={selectedItems.get(m.id)}
+                      onChange={(e) => setItemQty(m.id, Number(e.target.value))}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
           {error && <div className="error span-2">{error}</div>}
           <div className="form-actions span-2">
-            <button type="submit" disabled={saving || !form.materialId}>
+            <button type="submit" disabled={saving || selectedItems.size === 0}>
               {editingId ? "Save changes" : "Add demand"}
             </button>
             {editingId && (
@@ -175,7 +278,7 @@ export function ProductionPlanPage({
           <SearchBox
             value={query}
             onChange={setQuery}
-            placeholder="Search material, source…"
+            placeholder="Search product, BOM item, source…"
           />
         </div>
         <div className="table-wrap">
@@ -183,8 +286,8 @@ export function ProductionPlanPage({
             <thead>
               <tr>
                 <th>Needed by</th>
-                <th>Material</th>
-                <th>Qty</th>
+                <th>Product</th>
+                <th>BOM items</th>
                 <th>Source</th>
                 <th></th>
               </tr>
@@ -193,8 +296,8 @@ export function ProductionPlanPage({
               {pageItems.map((entry) => (
                 <tr key={entry.id}>
                   <td>{entry.neededByDate}</td>
-                  <td>{materialById.get(entry.materialId)?.code ?? "—"}</td>
-                  <td>{entry.qty}</td>
+                  <td>{entry.productName || "—"}</td>
+                  <td className="cell-wrap">{itemsSummary(entry)}</td>
                   <td>{entry.source || "—"}</td>
                   <td className="row-actions">
                     <button className="link" onClick={() => startEdit(entry)}>

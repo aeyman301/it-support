@@ -15,7 +15,7 @@ type FieldKey =
   | "shipFrom";
 
 const FIELD_LABELS: Record<FieldKey, string> = {
-  code: "Material code",
+  code: "BOM item code",
   name: "Name",
   uom: "UoM",
   leadTimeDays: "Lead time (days)",
@@ -196,9 +196,9 @@ export function MaterialCsvImport({ materials }: { materials: Material[] }) {
       <h2>Import lead times from a spreadsheet</h2>
       <p className="hint">
         Upload a CSV export of your lead-time spreadsheet (in Excel or Google
-        Sheets: File → Save As / Download → CSV). Rows are matched to
-        materials by code — matching materials are updated, unmatched codes
-        are skipped and listed after import. No new materials are created.
+        Sheets: File → Save As / Download → CSV). Rows are matched to BOM
+        items by code — matching items are updated, unmatched codes are
+        skipped and listed after import. No new BOM items are created.
       </p>
 
       <div className="file-picker">
@@ -234,7 +234,7 @@ export function MaterialCsvImport({ materials }: { materials: Material[] }) {
           </div>
           {!codeColumn && (
             <p className="error">
-              Pick which column holds the material code before importing.
+              Pick which column holds the BOM item code before importing.
             </p>
           )}
 
@@ -276,12 +276,12 @@ export function MaterialCsvImport({ materials }: { materials: Material[] }) {
 
           {result && (
             <p className="hint">
-              Updated {result.updated} material(s).
+              Updated {result.updated} BOM item(s).
               {result.unmatched.length > 0 && (
                 <>
                   {" "}
-                  {result.unmatched.length} code(s) not found in your
-                  materials list: {result.unmatched.slice(0, 15).join(", ")}
+                  {result.unmatched.length} code(s) not found in your BOM
+                  list: {result.unmatched.slice(0, 15).join(", ")}
                   {result.unmatched.length > 15 ? "…" : ""}
                 </>
               )}

@@ -379,6 +379,22 @@ code {
   .brand-eyebrow {
     display: none;
   }
+
+  .bom-picker-row {
+    flex-wrap: wrap;
+  }
+
+  .form-grid .bom-picker-check {
+    flex-basis: 100%;
+  }
+
+  .bom-picker-check span {
+    white-space: normal;
+  }
+
+  .form-grid .bom-picker-qty {
+    margin-left: 24px;
+  }
 }
 
 /* ---------- page building blocks ---------- */
@@ -534,6 +550,113 @@ code {
 
 .span-2 {
   grid-column: span 2;
+}
+
+.span-full {
+  grid-column: 1 / -1;
+}
+
+.bom-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -4px;
+}
+
+.bom-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-alt);
+  border: 1px solid var(--border-strong);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.bom-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: var(--border-strong);
+  color: var(--text-h);
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+
+.bom-chip-remove:hover {
+  background: var(--navy);
+  color: var(--navy-contrast);
+}
+
+.bom-picker {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px;
+}
+
+.bom-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.bom-picker-row:hover {
+  background: var(--surface-alt);
+}
+
+.form-grid .bom-picker-check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-h);
+  min-width: 0;
+}
+
+.form-grid .bom-picker-check input {
+  flex-shrink: 0;
+  width: auto;
+  min-width: 0;
+  padding: 0;
+  border-radius: 3px;
+  background: none;
+}
+
+.bom-picker-check span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-grid .bom-picker-qty {
+  width: 72px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  font: 13px/1.4 var(--sans);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-h);
 }
 
 .form-actions {
