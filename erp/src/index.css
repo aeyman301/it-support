@@ -831,6 +831,15 @@ td {
   color: var(--text-muted);
 }
 
+.consumed-list {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.consumed-list li {
+  line-height: 1.6;
+}
+
 tbody tr:last-child td {
   border-bottom: none;
 }

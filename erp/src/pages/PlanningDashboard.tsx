@@ -371,14 +371,17 @@ export function PlanningDashboard({
                       <td>{row.orderCount}</td>
                       <td>{row.totalQty}</td>
                       <td className="cell-wrap">
-                        {row.items.length === 0
-                          ? "—"
-                          : row.items
-                              .map(
-                                (it) =>
-                                  `${materialById.get(it.materialId)?.code ?? "?"} ×${it.qty}`,
-                              )
-                              .join(", ")}
+                        {row.items.length === 0 ? (
+                          "—"
+                        ) : (
+                          <ul className="consumed-list">
+                            {row.items.map((it) => (
+                              <li key={it.materialId}>
+                                {materialById.get(it.materialId)?.code ?? "?"} ×{it.qty}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </td>
                     </tr>
                   ))}
