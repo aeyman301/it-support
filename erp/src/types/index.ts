@@ -18,6 +18,15 @@ export interface Material {
   shipFrom?: string;
   notes?: string;
   updatedAt?: number;
+  /**
+   * "product" marks this as a finished good sold to a customer (e.g. a wire
+   * harness part number), not a raw material to purchase. Absent/"material"
+   * is the normal case. Products are excluded from BOM/purchasing views and
+   * only offered in the production plan's product picker.
+   */
+  kind?: "material" | "product";
+  /** For kind:"product" — grouping label shown in the picker, e.g. "Perodua D42L". */
+  model?: string;
 }
 
 export type PurchaseOrderStatus = "outstanding" | "received" | "cancelled";
@@ -43,11 +52,15 @@ export interface ProductionPlanItem {
 
 export interface ProductionPlanEntry {
   id: string;
-  /** Name of the product/build this demand is for, e.g. "Harness A-102". */
+  /** The finished product this customer order is for (Product.id). */
+  productId?: string;
+  /** Quantity of the product ordered, e.g. 200 pcs. */
+  productQty?: number;
+  /** Display label for the product — auto-filled from the picker, or free text for older entries. */
   productName?: string;
-  /** BOM items (materials) this entry consumes, each with its own quantity. */
+  /** Raw BOM items this order consumes, each with its own quantity (optional). */
   items?: ProductionPlanItem[];
-  /** Date the items are required by, to feed production/consumption. */
+  /** Date the order/items are required by. */
   neededByDate: string; // ISO date
   source?: string; // e.g. sales order / work order reference
   notes?: string;

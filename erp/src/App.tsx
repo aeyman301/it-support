@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
 import { authReady, firebaseConfigured } from "./lib/firebase";
 import {
   watchMaterials,
@@ -84,6 +84,19 @@ export default function App() {
     });
     return () => unsubs.forEach((u) => u());
   }, []);
+
+  // Products (finished goods sold to customers) live in the same collection
+  // as raw materials, tagged by kind — split them apart here so the BOM,
+  // purchasing, and planning views never see the 70-odd product codes, and
+  // the production plan's product picker never sees raw materials.
+  const rawMaterials = useMemo(
+    () => materials.filter((m) => m.kind !== "product"),
+    [materials],
+  );
+  const products = useMemo(
+    () => materials.filter((m) => m.kind === "product"),
+    [materials],
+  );
 
   if (!firebaseConfigured) {
     return (
@@ -190,21 +203,22 @@ export default function App() {
         <main className="app-main">
           {tab === "planning" && (
             <PlanningDashboard
-              materials={materials}
+              materials={rawMaterials}
               purchaseOrders={purchaseOrders}
               productionPlan={productionPlan}
             />
           )}
-          {tab === "materials" && <MaterialsPage materials={materials} />}
+          {tab === "materials" && <MaterialsPage materials={rawMaterials} />}
           {tab === "orders" && (
             <PurchaseOrdersPage
-              materials={materials}
+              materials={rawMaterials}
               purchaseOrders={purchaseOrders}
             />
           )}
           {tab === "plan" && (
             <ProductionPlanPage
-              materials={materials}
+              materials={rawMaterials}
+              products={products}
               productionPlan={productionPlan}
             />
           )}

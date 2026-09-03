@@ -11,7 +11,8 @@ import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
 
 const emptyDetails = {
-  productName: "",
+  productId: "",
+  productQty: 1,
   neededByDate: isoToday(),
   source: "",
   notes: "",
@@ -19,14 +20,17 @@ const emptyDetails = {
 
 export function ProductionPlanPage({
   materials,
+  products,
   productionPlan,
 }: {
   materials: Material[];
+  products: Material[];
   productionPlan: ProductionPlanEntry[];
 }) {
   const [details, setDetails] = useState(emptyDetails);
   const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
   const [pickerQuery, setPickerQuery] = useState("");
+  const [showMaterials, setShowMaterials] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,6 +39,21 @@ export function ProductionPlanPage({
     () => new Map(materials.map((m) => [m.id, m])),
     [materials],
   );
+  const productById = useMemo(
+    () => new Map(products.map((p) => [p.id, p])),
+    [products],
+  );
+
+  const productsByModel = useMemo(() => {
+    const groups = new Map<string, Material[]>();
+    for (const p of products) {
+      const model = p.model ?? "Other";
+      const list = groups.get(model) ?? [];
+      list.push(p);
+      groups.set(model, list);
+    }
+    return Array.from(groups.entries());
+  }, [products]);
 
   const filteredMaterials = useMemo(() => {
     const q = pickerQuery.trim().toLowerCase();
@@ -69,14 +88,15 @@ export function ProductionPlanPage({
   function startEdit(entry: ProductionPlanEntry) {
     setEditingId(entry.id);
     setDetails({
-      productName: entry.productName ?? "",
+      productId: entry.productId ?? "",
+      productQty: entry.productQty ?? 1,
       neededByDate: entry.neededByDate,
       source: entry.source ?? "",
       notes: entry.notes ?? "",
     });
-    setSelectedItems(
-      new Map(getProductionPlanItems(entry).map((it) => [it.materialId, it.qty])),
-    );
+    const items = getProductionPlanItems(entry);
+    setSelectedItems(new Map(items.map((it) => [it.materialId, it.qty])));
+    setShowMaterials(items.length > 0);
     setPickerQuery("");
   }
 
@@ -84,13 +104,19 @@ export function ProductionPlanPage({
     setEditingId(null);
     setDetails(emptyDetails);
     setSelectedItems(new Map());
+    setShowMaterials(false);
     setPickerQuery("");
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selectedItems.size === 0) {
-      setError("Pick at least one BOM item.");
+    const product = productById.get(details.productId);
+    if (!product) {
+      setError("Pick a product.");
+      return;
+    }
+    if (!details.productQty || details.productQty <= 0) {
+      setError("Order quantity must be greater than 0.");
       return;
     }
     if (!details.neededByDate) {
@@ -104,7 +130,15 @@ export function ProductionPlanPage({
         materialId,
         qty,
       }));
-      const payload = { ...details, items };
+      const payload = {
+        productId: product.id,
+        productQty: details.productQty,
+        productName: `${product.code} — ${product.name}`,
+        neededByDate: details.neededByDate,
+        source: details.source,
+        notes: details.notes,
+        items,
+      };
       if (editingId) {
         await updateProductionPlanEntry(editingId, payload);
       } else {
@@ -153,21 +187,40 @@ export function ProductionPlanPage({
   return (
     <div className="page">
       <section className="card">
-        <h2>{editingId ? "Edit demand" : "Add production demand"}</h2>
+        <h2>{editingId ? "Edit order" : "Add customer order"}</h2>
         <p className="hint">
-          Each product can consume multiple BOM items — pick every item it
-          needs below, with its own quantity. This is compared against stock
-          + outstanding orders to work out what still needs to be purchased.
+          Pick the product a customer ordered and how many, and when it's
+          needed by. This lands on the production plan so it can be worked
+          against stock and outstanding orders.
         </p>
         <form className="form-grid" onSubmit={onSubmit}>
           <label>
-            Product / build name
+            Product
+            <select
+              value={details.productId}
+              onChange={(e) => setDetails({ ...details, productId: e.target.value })}
+            >
+              <option value="">— select a product —</option>
+              {productsByModel.map(([model, items]) => (
+                <optgroup key={model} label={model}>
+                  {items.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.code} — {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+          <label>
+            Order qty
             <input
-              value={details.productName}
+              type="number"
+              min={1}
+              value={details.productQty}
               onChange={(e) =>
-                setDetails({ ...details, productName: e.target.value })
+                setDetails({ ...details, productQty: Number(e.target.value) })
               }
-              placeholder="e.g. Harness A-102"
             />
           </label>
           <label>
@@ -185,7 +238,7 @@ export function ProductionPlanPage({
             <input
               value={details.source}
               onChange={(e) => setDetails({ ...details, source: e.target.value })}
-              placeholder="Work order / sales order #"
+              placeholder="Customer PO #"
             />
           </label>
           <label className="span-2">
@@ -196,72 +249,87 @@ export function ProductionPlanPage({
             />
           </label>
 
-          <label className="span-full">
-            BOM items *
-            <input
-              value={pickerQuery}
-              onChange={(e) => setPickerQuery(e.target.value)}
-              placeholder="Search BOM items to add…"
-            />
-          </label>
+          {error && <div className="error span-2">{error}</div>}
 
-          {selectedItems.size > 0 && (
-            <div className="span-full bom-chip-list">
-              {Array.from(selectedItems, ([materialId, qty]) => (
-                <span key={materialId} className="bom-chip">
-                  {materialById.get(materialId)?.code ?? "?"} ×{qty}
-                  <button
-                    type="button"
-                    className="bom-chip-remove"
-                    onClick={() => removeItem(materialId)}
-                    aria-label="Remove"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="span-full bom-picker">
-            {materials.length === 0 && (
-              <p className="empty">No BOM items yet — add some on the BOM page first.</p>
-            )}
-            {materials.length > 0 && filteredMaterials.length === 0 && (
-              <p className="empty">No BOM items match "{pickerQuery}".</p>
-            )}
-            {filteredMaterials.map((m) => {
-              const checked = selectedItems.has(m.id);
-              return (
-                <div key={m.id} className="bom-picker-row">
-                  <label className="bom-picker-check">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleItem(m.id)}
-                    />
-                    <span>
-                      {m.code} — {m.name}
-                    </span>
-                  </label>
-                  {checked && (
-                    <input
-                      type="number"
-                      min={0}
-                      className="bom-picker-qty"
-                      value={selectedItems.get(m.id)}
-                      onChange={(e) => setItemQty(m.id, Number(e.target.value))}
-                    />
-                  )}
-                </div>
-              );
-            })}
+          <div className="span-full">
+            <button
+              type="button"
+              className="link"
+              onClick={() => setShowMaterials((v) => !v)}
+            >
+              {showMaterials ? "Hide" : "Add"} raw materials used (optional)
+            </button>
           </div>
 
-          {error && <div className="error span-2">{error}</div>}
+          {showMaterials && (
+            <>
+              <label className="span-full">
+                Raw materials
+                <input
+                  value={pickerQuery}
+                  onChange={(e) => setPickerQuery(e.target.value)}
+                  placeholder="Search BOM items to add…"
+                />
+              </label>
+
+              {selectedItems.size > 0 && (
+                <div className="span-full bom-chip-list">
+                  {Array.from(selectedItems, ([materialId, qty]) => (
+                    <span key={materialId} className="bom-chip">
+                      {materialById.get(materialId)?.code ?? "?"} ×{qty}
+                      <button
+                        type="button"
+                        className="bom-chip-remove"
+                        onClick={() => removeItem(materialId)}
+                        aria-label="Remove"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              <div className="span-full bom-picker">
+                {materials.length === 0 && (
+                  <p className="empty">No BOM items yet — add some on the BOM page first.</p>
+                )}
+                {materials.length > 0 && filteredMaterials.length === 0 && (
+                  <p className="empty">No BOM items match "{pickerQuery}".</p>
+                )}
+                {filteredMaterials.map((m) => {
+                  const checked = selectedItems.has(m.id);
+                  return (
+                    <div key={m.id} className="bom-picker-row">
+                      <label className="bom-picker-check">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleItem(m.id)}
+                        />
+                        <span>
+                          {m.code} — {m.name}
+                        </span>
+                      </label>
+                      {checked && (
+                        <input
+                          type="number"
+                          min={0}
+                          className="bom-picker-qty"
+                          value={selectedItems.get(m.id)}
+                          onChange={(e) => setItemQty(m.id, Number(e.target.value))}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           <div className="form-actions span-2">
-            <button type="submit" disabled={saving || selectedItems.size === 0}>
-              {editingId ? "Save changes" : "Add demand"}
+            <button type="submit" disabled={saving}>
+              {editingId ? "Save changes" : "Add to production plan"}
             </button>
             {editingId && (
               <button type="button" className="secondary" onClick={resetForm}>
@@ -287,7 +355,8 @@ export function ProductionPlanPage({
               <tr>
                 <th>Needed by</th>
                 <th>Product</th>
-                <th>BOM items</th>
+                <th>Order qty</th>
+                <th>Raw materials used</th>
                 <th>Source</th>
                 <th></th>
               </tr>
@@ -296,7 +365,8 @@ export function ProductionPlanPage({
               {pageItems.map((entry) => (
                 <tr key={entry.id}>
                   <td>{entry.neededByDate}</td>
-                  <td>{entry.productName || "—"}</td>
+                  <td className="cell-wrap">{entry.productName || "—"}</td>
+                  <td>{entry.productQty ?? "—"}</td>
                   <td className="cell-wrap">{itemsSummary(entry)}</td>
                   <td>{entry.source || "—"}</td>
                   <td className="row-actions">
@@ -314,14 +384,14 @@ export function ProductionPlanPage({
               ))}
               {sorted.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="empty">
+                  <td colSpan={6} className="empty">
                     No demand entries yet.
                   </td>
                 </tr>
               )}
               {sorted.length > 0 && total === 0 && (
                 <tr>
-                  <td colSpan={5} className="empty">
+                  <td colSpan={6} className="empty">
                     No demand entries match "{query}".
                   </td>
                 </tr>
