@@ -27,12 +27,6 @@ export interface Material {
   kind?: "material" | "product";
   /** For kind:"product" — grouping label shown in the picker, e.g. "Perodua D42L". */
   model?: string;
-  /**
-   * For kind:"product" — the raw materials consumed to build ONE unit of
-   * this product. The production plan multiplies this by the order
-   * quantity to project future purchasing needs.
-   */
-  bom?: ProductionPlanItem[];
 }
 
 export type PurchaseOrderStatus = "outstanding" | "received" | "cancelled";
