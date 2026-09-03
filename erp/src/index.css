@@ -427,6 +427,12 @@ code {
   font-size: 15px;
 }
 
+.card h3 {
+  font-size: 13px;
+  margin: 20px 0 4px;
+  color: var(--text-h);
+}
+
 .hint {
   color: var(--text-muted);
   font-size: 13px;

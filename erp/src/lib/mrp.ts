@@ -12,7 +12,7 @@ import type {
 export const isoToday = () => format(new Date(), "yyyy-MM-dd");
 
 /**
- * A production plan entry may hold multiple BOM items (current shape), or
+ * A production plan entry may hold multiple inventory items (current shape), or
  * be an older single-material doc from before multi-item entries existed
  * (materialId/qty at the top level instead of an items array).
  */

@@ -8,11 +8,13 @@ import {
 import type { Material, ProductionPlanEntry, PurchaseOrder } from "./types";
 import { PlanningDashboard } from "./pages/PlanningDashboard";
 import { MaterialsPage } from "./pages/MaterialsPage";
+import { BomPage } from "./pages/BomPage";
 import { PurchaseOrdersPage } from "./pages/PurchaseOrdersPage";
 import { ProductionPlanPage } from "./pages/ProductionPlanPage";
 import {
   IconGrid,
   IconBox,
+  IconLayers,
   IconTruck,
   IconClipboard,
   IconMenu,
@@ -20,7 +22,7 @@ import {
 } from "./components/icons";
 import pnaLogo from "./assets/pna-logo.png";
 
-type Tab = "planning" | "materials" | "orders" | "plan";
+type Tab = "planning" | "materials" | "bom" | "orders" | "plan";
 
 const TABS: {
   id: Tab;
@@ -36,9 +38,15 @@ const TABS: {
   },
   {
     id: "materials",
-    label: "BOM & Lead Time",
-    description: "Master data, stock and lead time per BOM item.",
+    label: "Inventory Stock",
+    description: "Warehouse stock and lead time per raw material.",
     icon: IconBox,
+  },
+  {
+    id: "bom",
+    label: "Bill of Materials (BOM)",
+    description: "The raw materials each product is built from, per unit.",
+    icon: IconLayers,
   },
   {
     id: "orders",
@@ -86,9 +94,9 @@ export default function App() {
   }, []);
 
   // Products (finished goods sold to customers) live in the same collection
-  // as raw materials, tagged by kind — split them apart here so the BOM,
-  // purchasing, and planning views never see the 70-odd product codes, and
-  // the production plan's product picker never sees raw materials.
+  // as raw materials, tagged by kind — split them apart here so the
+  // inventory, purchasing, and planning views never see the 70-odd product
+  // codes, and the production plan's product picker never sees raw materials.
   const rawMaterials = useMemo(
     () => materials.filter((m) => m.kind !== "product"),
     [materials],
@@ -210,6 +218,9 @@ export default function App() {
             />
           )}
           {tab === "materials" && <MaterialsPage materials={rawMaterials} />}
+          {tab === "bom" && (
+            <BomPage materials={rawMaterials} products={products} />
+          )}
           {tab === "orders" && (
             <PurchaseOrdersPage
               materials={rawMaterials}

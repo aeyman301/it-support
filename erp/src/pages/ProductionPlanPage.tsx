@@ -1,3 +1,4 @@
+import { endOfMonth, format, startOfMonth } from "date-fns";
 import { useMemo, useState } from "react";
 import type { Material, ProductionPlanEntry } from "../types";
 import {
@@ -176,6 +177,56 @@ export function ProductionPlanPage({
   const { query, setQuery, page, setPage, pageCount, pageItems, total } =
     usePagedSearch(sorted, matchesEntry);
 
+  const monthRange = useMemo(() => {
+    const now = new Date();
+    return {
+      start: format(startOfMonth(now), "yyyy-MM-dd"),
+      end: format(endOfMonth(now), "yyyy-MM-dd"),
+      label: format(now, "MMMM yyyy"),
+    };
+  }, []);
+
+  const currentMonthEntries = useMemo(
+    () =>
+      productionPlan.filter(
+        (e) => e.neededByDate >= monthRange.start && e.neededByDate <= monthRange.end,
+      ),
+    [productionPlan, monthRange],
+  );
+
+  // Explodes each of this month's orders through its product's Bill of
+  // Materials recipe (qty per unit × order qty) and rolls the result up per
+  // raw material, so buyers can see this month's total demand at a glance
+  // instead of adding it up order by order.
+  const materialForecast = useMemo(() => {
+    const totals = new Map<string, number>();
+    let entriesWithoutBom = 0;
+    for (const entry of currentMonthEntries) {
+      const product = entry.productId ? productById.get(entry.productId) : undefined;
+      const bom = product?.bom ?? [];
+      if (bom.length === 0) {
+        entriesWithoutBom += 1;
+        continue;
+      }
+      const qty = entry.productQty ?? 0;
+      for (const line of bom) {
+        totals.set(line.materialId, (totals.get(line.materialId) ?? 0) + line.qty * qty);
+      }
+    }
+    const rows = Array.from(totals, ([materialId, forecastQty]) => {
+      const material = materialById.get(materialId);
+      const onHand = material?.onHandQty ?? 0;
+      return {
+        materialId,
+        material,
+        forecastQty,
+        onHand,
+        shortfall: Math.max(0, forecastQty - onHand),
+      };
+    }).sort((a, b) => b.shortfall - a.shortfall || b.forecastQty - a.forecastQty);
+    return { rows, entriesWithoutBom };
+  }, [currentMonthEntries, productById, materialById]);
+
   function itemsSummary(entry: ProductionPlanEntry) {
     const items = getProductionPlanItems(entry);
     if (items.length === 0) return "—";
@@ -186,6 +237,76 @@ export function ProductionPlanPage({
 
   return (
     <div className="page">
+      <section className="card">
+        <h2>Current month planning — {monthRange.label}</h2>
+        <p className="hint">
+          Orders needed this month, exploded through each product's Bill of
+          Materials recipe to forecast raw material demand.
+        </p>
+        {currentMonthEntries.length === 0 ? (
+          <p className="empty">No orders needed this month yet.</p>
+        ) : (
+          <>
+            <p className="hint hint-inline">
+              {currentMonthEntries.length} order(s) needed this month,
+              totaling{" "}
+              {currentMonthEntries.reduce((sum, e) => sum + (e.productQty ?? 0), 0)}{" "}
+              unit(s).
+            </p>
+
+            <h3>Material forecast</h3>
+            {materialForecast.rows.length === 0 ? (
+              <p className="empty">
+                None of this month's products have a Bill of Materials
+                recipe defined yet — set one up on the Bill of Materials
+                page to see a forecast here.
+              </p>
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Inventory item</th>
+                      <th>Forecasted demand</th>
+                      <th>On-hand</th>
+                      <th>Projected shortfall</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {materialForecast.rows.map((row) => (
+                      <tr key={row.materialId} className={row.shortfall > 0 ? "urgent-row" : ""}>
+                        <td className="cell-wrap">
+                          {row.material?.code ?? row.materialId} —{" "}
+                          {row.material?.name ?? "Unknown item"}
+                        </td>
+                        <td>{row.forecastQty}</td>
+                        <td>{row.onHand}</td>
+                        <td>
+                          {row.shortfall > 0 ? (
+                            <span className="status-badge cancelled">
+                              {row.shortfall} short
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {materialForecast.entriesWithoutBom > 0 && (
+              <p className="hint hint-inline">
+                {materialForecast.entriesWithoutBom} of this month's order(s)
+                are for products without a Bill of Materials recipe yet, so
+                they're excluded from the forecast above.
+              </p>
+            )}
+          </>
+        )}
+      </section>
+
       <section className="card">
         <h2>{editingId ? "Edit order" : "Add customer order"}</h2>
         <p className="hint">
@@ -268,7 +389,7 @@ export function ProductionPlanPage({
                 <input
                   value={pickerQuery}
                   onChange={(e) => setPickerQuery(e.target.value)}
-                  placeholder="Search BOM items to add…"
+                  placeholder="Search inventory items to add…"
                 />
               </label>
 
@@ -292,10 +413,13 @@ export function ProductionPlanPage({
 
               <div className="span-full bom-picker">
                 {materials.length === 0 && (
-                  <p className="empty">No BOM items yet — add some on the BOM page first.</p>
+                  <p className="empty">
+                    No inventory items yet — add some on the Inventory Stock
+                    page first.
+                  </p>
                 )}
                 {materials.length > 0 && filteredMaterials.length === 0 && (
-                  <p className="empty">No BOM items match "{pickerQuery}".</p>
+                  <p className="empty">No inventory items match "{pickerQuery}".</p>
                 )}
                 {filteredMaterials.map((m) => {
                   const checked = selectedItems.has(m.id);
@@ -346,7 +470,7 @@ export function ProductionPlanPage({
           <SearchBox
             value={query}
             onChange={setQuery}
-            placeholder="Search product, BOM item, source…"
+            placeholder="Search product, inventory item, source…"
           />
         </div>
         <div className="table-wrap">

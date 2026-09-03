@@ -86,7 +86,7 @@ export function PlanningDashboard({
         <td colSpan={colSpan}>
           {plan.buckets.length === 0 ? (
             <p className="empty">
-              No incoming orders or demand scheduled for this BOM item.
+              No incoming orders or demand scheduled for this inventory item.
             </p>
           ) : (
             <table className="detail-table">
@@ -175,7 +175,7 @@ export function PlanningDashboard({
             <span className="stat-icon">
               <IconBox />
             </span>
-            <span className="stat-card-label">BOM items tracked</span>
+            <span className="stat-card-label">Inventory items tracked</span>
             <span className="stat-card-value">{materials.length}</span>
             <span className="stat-card-caption">In master data</span>
           </div>
@@ -237,24 +237,25 @@ export function PlanningDashboard({
             <SearchBox
               value={suggestionsPaged.query}
               onChange={suggestionsPaged.setQuery}
-              placeholder="Search BOM item…"
+              placeholder="Search inventory item…"
             />
           )}
         </div>
         <p className="hint">
-          For each BOM item this combines warehouse stock, outstanding
+          For each inventory item this combines warehouse stock, outstanding
           orders not yet arrived, the production plan, and the item's own
           lead time to work out the last date you can place a new order
           before running short.
         </p>
         {materials.length === 0 ? (
           <p className="empty">
-            Add BOM items (with their lead time) to see planning results here.
+            Add inventory items (with their lead time) to see planning
+            results here.
           </p>
         ) : allSuggestions.length === 0 ? (
           <p className="empty">
             {leadTimeMissingCount > 0
-              ? `No shortfalls projected for BOM items with a lead time set. ${leadTimeMissingCount} item(s) still need a lead time before they can show up here — see BOM overview below.`
+              ? `No shortfalls projected for inventory items with a lead time set. ${leadTimeMissingCount} item(s) still need a lead time before they can show up here — see Inventory overview below.`
               : "No shortfalls projected — stock and outstanding orders cover the current production plan."}
           </p>
         ) : (
@@ -263,7 +264,7 @@ export function PlanningDashboard({
               <table>
                 <thead>
                   <tr>
-                    <th>BOM item</th>
+                    <th>Inventory item</th>
                     <th>Order by</th>
                     <th>Needed by</th>
                     <th>Suggested qty</th>
@@ -304,7 +305,7 @@ export function PlanningDashboard({
                   {suggestionsPaged.total === 0 && (
                     <tr>
                       <td colSpan={6} className="empty">
-                        No BOM items match "{suggestionsPaged.query}".
+                        No inventory items match "{suggestionsPaged.query}".
                       </td>
                     </tr>
                   )}
@@ -319,9 +320,9 @@ export function PlanningDashboard({
             />
             {leadTimeMissingCount > 0 && (
               <p className="hint hint-inline">
-                {leadTimeMissingCount} more BOM item(s) are missing a lead
-                time and are excluded from this list until it's set — see
-                BOM overview below.
+                {leadTimeMissingCount} more inventory item(s) are missing a
+                lead time and are excluded from this list until it's set —
+                see Inventory overview below.
               </p>
             )}
           </>
@@ -330,7 +331,7 @@ export function PlanningDashboard({
 
       <section className="card">
         <div className="card-header-row">
-          <h2>BOM consumed</h2>
+          <h2>Materials consumed</h2>
           {consumptionByProduct.length > 0 && (
             <SearchBox
               value={consumptionPaged.query}
@@ -407,7 +408,7 @@ export function PlanningDashboard({
 
       <section className="card">
         <div className="card-header-row">
-          <h2>BOM overview</h2>
+          <h2>Inventory overview</h2>
           <SearchBox
             value={overviewPaged.query}
             onChange={overviewPaged.setQuery}
@@ -418,7 +419,7 @@ export function PlanningDashboard({
           <table>
             <thead>
               <tr>
-                <th>BOM item</th>
+                <th>Inventory item</th>
                 <th>Lead time</th>
                 <th>On-hand</th>
                 <th>Outstanding orders</th>
@@ -455,14 +456,14 @@ export function PlanningDashboard({
               {plans.length === 0 && (
                 <tr>
                   <td colSpan={6} className="empty">
-                    No BOM items yet.
+                    No inventory items yet.
                   </td>
                 </tr>
               )}
               {plans.length > 0 && overviewPaged.total === 0 && (
                 <tr>
                   <td colSpan={6} className="empty">
-                    No BOM items match "{overviewPaged.query}".
+                    No inventory items match "{overviewPaged.query}".
                   </td>
                 </tr>
               )}

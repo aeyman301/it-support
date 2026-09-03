@@ -85,7 +85,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Delete this BOM item? This does not delete its orders or plan entries."))
+    if (!confirm("Delete this inventory item? This does not delete its orders or plan entries."))
       return;
     await deleteMaterial(id);
     if (editingId === id) resetForm();
@@ -94,10 +94,11 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
   return (
     <div className="page">
       <section className="card">
-        <h2>{editingId ? "Edit BOM item" : "Add BOM item"}</h2>
+        <h2>{editingId ? "Edit inventory item" : "Add inventory item"}</h2>
         <p className="hint">
-          Lead time is set per BOM item here — this is what the planning
-          dashboard uses to work out when a purchase order must be placed.
+          Lead time is set per inventory item here — this is what the
+          planning dashboard uses to work out when a purchase order must be
+          placed.
         </p>
         <form className="form-grid" onSubmit={onSubmit}>
           <label>
@@ -193,7 +194,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
           {error && <div className="error span-2">{error}</div>}
           <div className="form-actions span-2">
             <button type="submit" disabled={saving}>
-              {editingId ? "Save changes" : "Add BOM item"}
+              {editingId ? "Save changes" : "Add inventory item"}
             </button>
             {editingId && (
               <button type="button" className="secondary" onClick={resetForm}>
@@ -208,7 +209,7 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
 
       <section className="card">
         <div className="card-header-row">
-          <h2>BOM ({materials.length})</h2>
+          <h2>Inventory Stock ({materials.length})</h2>
           <SearchBox
             value={query}
             onChange={setQuery}
@@ -268,14 +269,14 @@ export function MaterialsPage({ materials }: { materials: Material[] }) {
               {materials.length === 0 && (
                 <tr>
                   <td colSpan={9} className="empty">
-                    No BOM items yet. Add your first one above.
+                    No inventory items yet. Add your first one above.
                   </td>
                 </tr>
               )}
               {materials.length > 0 && total === 0 && (
                 <tr>
                   <td colSpan={9} className="empty">
-                    No BOM items match "{query}".
+                    No inventory items match "{query}".
                   </td>
                 </tr>
               )}
