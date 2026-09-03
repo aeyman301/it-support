@@ -204,6 +204,7 @@ export default function App() {
           {tab === "planning" && (
             <PlanningDashboard
               materials={rawMaterials}
+              products={products}
               purchaseOrders={purchaseOrders}
               productionPlan={productionPlan}
             />
