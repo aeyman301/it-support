@@ -1,5 +1,5 @@
 import { endOfMonth, format, startOfMonth } from "date-fns";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { Material, ProductionPlanEntry } from "../types";
 import {
   createProductionPlanEntry,
@@ -34,6 +34,7 @@ export function ProductionPlanPage({
   const [pickerQuery, setPickerQuery] = useState("");
   const [showMaterials, setShowMaterials] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -238,12 +239,38 @@ export function ProductionPlanPage({
       row.materialId.toLowerCase().includes(q),
   );
 
-  function itemsSummary(entry: ProductionPlanEntry) {
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  // What an order actually consumes. An entry can carry its own explicit
+  // list, but most come from the PPC harness plan, which stores only the
+  // product and how many — those explode through the product's Bill of
+  // Materials recipe (qty per unit × order qty), the same figures the
+  // material forecast above is built from.
+  function entryMaterials(entry: ProductionPlanEntry) {
     const items = getProductionPlanItems(entry);
-    if (items.length === 0) return "—";
-    return items
-      .map((it) => `${materialById.get(it.materialId)?.code ?? "?"} ×${formatQty(it.qty)}`)
-      .join(", ");
+    if (items.length > 0) return { lines: items, fromBom: false };
+    const bom =
+      (entry.productId ? productById.get(entry.productId)?.bom : undefined) ?? [];
+    const qty = entry.productQty ?? 0;
+    return {
+      lines: bom.map((line) => ({
+        materialId: line.materialId,
+        qty: line.qty * qty,
+      })),
+      fromBom: true,
+    };
+  }
+
+  function materialLabel(line: { materialId: string; qty: number }) {
+    const material = materialById.get(line.materialId);
+    return `${material?.code ?? line.materialId} ×${formatQty(line.qty)}`;
   }
 
   return (
@@ -521,26 +548,66 @@ export function ProductionPlanPage({
               </tr>
             </thead>
             <tbody>
-              {pageItems.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{entry.neededByDate}</td>
-                  <td className="cell-wrap">{entry.productName || "—"}</td>
-                  <td>{entry.productQty ?? "—"}</td>
-                  <td className="cell-wrap">{itemsSummary(entry)}</td>
-                  <td>{entry.source || "—"}</td>
-                  <td className="row-actions">
-                    <button className="link" onClick={() => startEdit(entry)}>
-                      Edit
-                    </button>
-                    <button
-                      className="link danger"
-                      onClick={() => onDelete(entry.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {pageItems.map((entry) => {
+                const { lines, fromBom } = entryMaterials(entry);
+                const isOpen = expanded.has(entry.id);
+                return (
+                  <Fragment key={entry.id}>
+                    <tr>
+                      <td>{entry.neededByDate}</td>
+                      <td className="cell-wrap">{entry.productName || "—"}</td>
+                      <td>{entry.productQty ?? "—"}</td>
+                      <td className="cell-wrap">
+                        {lines.length === 0 ? (
+                          "—"
+                        ) : lines.length <= 3 ? (
+                          lines.map(materialLabel).join(", ")
+                        ) : (
+                          <button
+                            className="link"
+                            onClick={() => toggleExpanded(entry.id)}
+                          >
+                            {lines.length} items — {isOpen ? "hide" : "show"}
+                          </button>
+                        )}
+                      </td>
+                      <td>{entry.source || "—"}</td>
+                      <td className="row-actions">
+                        <button className="link" onClick={() => startEdit(entry)}>
+                          Edit
+                        </button>
+                        <button
+                          className="link danger"
+                          onClick={() => onDelete(entry.id)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                    {isOpen && lines.length > 0 && (
+                      <tr className="detail-row">
+                        <td colSpan={6}>
+                          {fromBom && (
+                            <p className="hint hint-inline">
+                              From the product's Bill of Materials, for all{" "}
+                              {entry.productQty ?? 0} unit(s).
+                            </p>
+                          )}
+                          <div className="bom-detail-grid">
+                            {lines.map((line) => (
+                              <span key={line.materialId}>
+                                {materialById.get(line.materialId)?.code ??
+                                  line.materialId}
+                                <strong> ×{formatQty(line.qty)}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
               {sorted.length === 0 && (
                 <tr>
                   <td colSpan={6} className="empty">
