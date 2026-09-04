@@ -6,7 +6,7 @@ import {
   deleteProductionPlanEntry,
   updateProductionPlanEntry,
 } from "../lib/repo";
-import { getProductionPlanItems, isoToday } from "../lib/mrp";
+import { getProductionPlanItems, isoToday, resolveEntryItems } from "../lib/mrp";
 import { formatQty } from "../lib/format";
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
@@ -204,15 +204,13 @@ export function ProductionPlanPage({
     const totals = new Map<string, number>();
     let entriesWithoutBom = 0;
     for (const entry of currentMonthEntries) {
-      const product = entry.productId ? productById.get(entry.productId) : undefined;
-      const bom = product?.bom ?? [];
-      if (bom.length === 0) {
+      const items = resolveEntryItems(entry, productById);
+      if (items.length === 0) {
         entriesWithoutBom += 1;
         continue;
       }
-      const qty = entry.productQty ?? 0;
-      for (const line of bom) {
-        totals.set(line.materialId, (totals.get(line.materialId) ?? 0) + line.qty * qty);
+      for (const item of items) {
+        totals.set(item.materialId, (totals.get(item.materialId) ?? 0) + item.qty);
       }
     }
     const rows = Array.from(totals, ([materialId, forecastQty]) => {
@@ -254,17 +252,9 @@ export function ProductionPlanPage({
   // Materials recipe (qty per unit × order qty), the same figures the
   // material forecast above is built from.
   function entryMaterials(entry: ProductionPlanEntry) {
-    const items = getProductionPlanItems(entry);
-    if (items.length > 0) return { lines: items, fromBom: false };
-    const bom =
-      (entry.productId ? productById.get(entry.productId)?.bom : undefined) ?? [];
-    const qty = entry.productQty ?? 0;
     return {
-      lines: bom.map((line) => ({
-        materialId: line.materialId,
-        qty: line.qty * qty,
-      })),
-      fromBom: true,
+      lines: resolveEntryItems(entry, productById),
+      fromBom: getProductionPlanItems(entry).length === 0,
     };
   }
 

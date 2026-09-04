@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from "react";
 import type { Material, MaterialPlan, ProductionPlanEntry, PurchaseOrder } from "../types";
-import { computeAllPlans, getProductionPlanItems, isOrderDelayed } from "../lib/mrp";
+import { computeAllPlans, isOrderDelayed, resolveEntryItems } from "../lib/mrp";
 import { formatQty } from "../lib/format";
 import {
   IconAlert,
@@ -38,8 +38,8 @@ export function PlanningDashboard({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const plans = useMemo(
-    () => computeAllPlans(materials, purchaseOrders, productionPlan),
-    [materials, purchaseOrders, productionPlan],
+    () => computeAllPlans(materials, purchaseOrders, productionPlan, products),
+    [materials, purchaseOrders, productionPlan, products],
   );
 
   const allSuggestions = plans
@@ -127,7 +127,8 @@ export function PlanningDashboard({
 
   // Rolls up every production plan entry's raw materials by product, so
   // "what does this product actually consume" can be read off the logged
-  // orders instead of re-deriving it from scratch each time.
+  // orders. The materials come from each product's Bill of Materials recipe
+  // unless the entry carries its own explicit list.
   const consumptionByProduct = useMemo(() => {
     const productById = new Map(products.map((p) => [p.id, p]));
     const map = new Map<
@@ -143,7 +144,7 @@ export function PlanningDashboard({
       };
       bucket.orderCount += 1;
       bucket.totalQty += entry.productQty ?? 0;
-      for (const item of getProductionPlanItems(entry)) {
+      for (const item of resolveEntryItems(entry, productById)) {
         bucket.items.set(item.materialId, (bucket.items.get(item.materialId) ?? 0) + item.qty);
       }
       map.set(entry.productId, bucket);
@@ -342,15 +343,14 @@ export function PlanningDashboard({
           )}
         </div>
         <p className="hint">
-          Raw materials logged against each product's orders on the
-          production plan, rolled up per product — this is what feeds the
-          demand behind the purchasing suggestions above.
+          What each product's orders on the production plan consume, taken
+          from its Bill of Materials recipe and rolled up per product — this
+          is what feeds the demand behind the purchasing suggestions above.
         </p>
         {consumptionByProduct.length === 0 ? (
           <p className="empty">
-            No product orders with raw materials logged yet. Add "raw
-            materials used" when logging a customer order on the Production
-            Plan page to see consumption here.
+            No product orders on the production plan yet, or none of their
+            products have a Bill of Materials recipe set.
           </p>
         ) : (
           <>
@@ -365,28 +365,47 @@ export function PlanningDashboard({
                   </tr>
                 </thead>
                 <tbody>
-                  {consumptionPaged.pageItems.map((row) => (
-                    <tr key={row.product.id}>
-                      <td className="cell-wrap">
-                        {row.product.code} — {row.product.name}
-                      </td>
-                      <td>{row.orderCount}</td>
-                      <td>{row.totalQty}</td>
-                      <td className="cell-wrap">
-                        {row.items.length === 0 ? (
-                          "—"
-                        ) : (
-                          <ul className="consumed-list">
-                            {row.items.map((it) => (
-                              <li key={it.materialId}>
-                                {materialById.get(it.materialId)?.code ?? "?"} ×{formatQty(it.qty)}
-                              </li>
-                            ))}
-                          </ul>
+                  {consumptionPaged.pageItems.map((row) => {
+                    const isOpen = expanded.has(row.product.id);
+                    return (
+                      <Fragment key={row.product.id}>
+                        <tr>
+                          <td className="cell-wrap">
+                            {row.product.code} — {row.product.name}
+                          </td>
+                          <td>{row.orderCount}</td>
+                          <td>{row.totalQty}</td>
+                          <td>
+                            {row.items.length === 0 ? (
+                              "—"
+                            ) : (
+                              <button
+                                className="link"
+                                onClick={() => toggle(row.product.id)}
+                              >
+                                {row.items.length} items —{" "}
+                                {isOpen ? "hide" : "show"}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                        {isOpen && row.items.length > 0 && (
+                          <tr className="detail-row">
+                            <td colSpan={4}>
+                              <ul className="consumed-list">
+                                {row.items.map((it) => (
+                                  <li key={it.materialId}>
+                                    {materialById.get(it.materialId)?.code ?? "?"} ×
+                                    {formatQty(it.qty)}
+                                  </li>
+                                ))}
+                              </ul>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                    </tr>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                   {consumptionPaged.total === 0 && (
                     <tr>
                       <td colSpan={4} className="empty">

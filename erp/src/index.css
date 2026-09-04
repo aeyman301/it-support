@@ -882,13 +882,19 @@ td {
   color: var(--text-muted);
 }
 
+/* A harness recipe runs to a few hundred components, so the expanded list
+   flows into columns instead of one very long stack. */
 .consumed-list {
   margin: 0;
   padding-left: 16px;
+  columns: 4 190px;
+  column-gap: 24px;
+  font-size: 12.5px;
 }
 
 .consumed-list li {
   line-height: 1.6;
+  break-inside: avoid;
 }
 
 tbody tr:last-child td {
