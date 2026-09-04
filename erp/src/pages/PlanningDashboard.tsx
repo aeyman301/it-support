@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from "react";
 import type { Material, MaterialPlan, ProductionPlanEntry, PurchaseOrder } from "../types";
 import { computeAllPlans, getProductionPlanItems, isOrderDelayed } from "../lib/mrp";
+import { formatQty } from "../lib/format";
 import {
   IconAlert,
   IconBox,
@@ -378,7 +379,7 @@ export function PlanningDashboard({
                           <ul className="consumed-list">
                             {row.items.map((it) => (
                               <li key={it.materialId}>
-                                {materialById.get(it.materialId)?.code ?? "?"} ×{it.qty}
+                                {materialById.get(it.materialId)?.code ?? "?"} ×{formatQty(it.qty)}
                               </li>
                             ))}
                           </ul>

@@ -129,7 +129,9 @@ def extract(path: str):
                 continue
             if qty <= 0:
                 continue
-            bom.append({"materialId": component, "qty": qty})
+            # Spreadsheet floats carry representation noise (10.616 comes
+            # through as 10.616000000000001); round it off before storing.
+            bom.append({"materialId": component, "qty": round(qty, 6)})
         total_lines += len(bom)
         products.append(
             {

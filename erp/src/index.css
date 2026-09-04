@@ -610,6 +610,51 @@ code {
   padding: 4px;
 }
 
+/* A real recipe runs to 80+ components — cap the chip list so the editor
+   stays a fixed height instead of pushing the picker off the screen. */
+.bom-chip-list-scroll {
+  max-height: 92px;
+  overflow-y: auto;
+  margin: 10px 0;
+  padding-right: 4px;
+}
+
+.bom-product-select {
+  font: 13px/1.4 var(--sans);
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-h);
+  max-width: 340px;
+}
+
+.bom-picker-search {
+  width: 100%;
+  box-sizing: border-box;
+  font: 14px/1.4 var(--sans);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-h);
+}
+
+/* Expanded component list: many short entries read better in columns than
+   as one long stack. */
+.bom-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 4px 16px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.bom-detail-grid strong {
+  color: var(--text-h);
+}
+
 .bom-picker-row {
   display: flex;
   align-items: center;

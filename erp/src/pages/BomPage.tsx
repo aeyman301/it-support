@@ -1,9 +1,14 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import type { Material } from "../types";
 import { updateMaterial } from "../lib/repo";
+import { formatQty } from "../lib/format";
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
+
+/** Real recipes run to 80+ components, so the picker only renders a slice
+ * of the inventory until the search narrows it down. */
+const PICKER_LIMIT = 60;
 
 export function BomPage({
   materials,
@@ -17,6 +22,7 @@ export function BomPage({
   const [bomPickerQuery, setBomPickerQuery] = useState("");
   const [bomSaving, setBomSaving] = useState(false);
   const [bomSaved, setBomSaved] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const materialById = useMemo(
     () => new Map(materials.map((m) => [m.id, m])),
@@ -45,7 +51,7 @@ export function BomPage({
     setBomSaved(false);
   }
 
-  const filteredBomMaterials = useMemo(() => {
+  const matchedMaterials = useMemo(() => {
     const q = bomPickerQuery.trim().toLowerCase();
     if (!q) return materials;
     return materials.filter(
@@ -53,6 +59,8 @@ export function BomPage({
         m.code.toLowerCase().includes(q) || m.name.toLowerCase().includes(q),
     );
   }, [materials, bomPickerQuery]);
+
+  const visibleMaterials = matchedMaterials.slice(0, PICKER_LIMIT);
 
   function toggleBomLine(materialId: string) {
     setBomLines((prev) => {
@@ -90,6 +98,15 @@ export function BomPage({
     }
   }
 
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
   const overviewRows = useMemo(
     () => [...products].sort((a, b) => a.code.localeCompare(b.code)),
     [products],
@@ -103,117 +120,124 @@ export function BomPage({
   const { query, setQuery, page, setPage, pageCount, pageItems, total } =
     usePagedSearch(overviewRows, matchesProduct);
 
+  const selectedProduct = productById.get(bomProductId);
+
   return (
     <div className="page">
       <section className="card">
-        <h2>Define a product's recipe</h2>
-        <p className="hint">
-          Pick a product and set how much of each raw material one unit of
-          it uses. This is what the production plan's material forecast
-          multiplies by order quantity to project future purchasing needs —
-          set it up once per product.
-        </p>
-        <div className="form-grid">
-          <label className="span-2">
-            Product
-            <select value={bomProductId} onChange={(e) => selectBomProduct(e.target.value)}>
-              <option value="">— select a product —</option>
-              {productsByModel.map(([model, items]) => (
-                <optgroup key={model} label={model}>
-                  {items.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.code} — {p.name}
-                      {p.bom?.length ? ` (${p.bom.length} materials set)` : ""}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-
-          {bomProductId && (
-            <>
-              <label className="span-full">
-                Raw materials per unit
-                <input
-                  value={bomPickerQuery}
-                  onChange={(e) => setBomPickerQuery(e.target.value)}
-                  placeholder="Search inventory items to add…"
-                />
-              </label>
-
-              {bomLines.size > 0 && (
-                <div className="span-full bom-chip-list">
-                  {Array.from(bomLines, ([materialId, qty]) => (
-                    <span key={materialId} className="bom-chip">
-                      {materialById.get(materialId)?.code ?? "?"} ×{qty}
-                      <button
-                        type="button"
-                        className="bom-chip-remove"
-                        onClick={() => removeBomLine(materialId)}
-                        aria-label="Remove"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              <div className="span-full bom-picker">
-                {materials.length === 0 && (
-                  <p className="empty">
-                    No inventory items yet — add some on the Inventory Stock
-                    page first.
-                  </p>
-                )}
-                {materials.length > 0 && filteredBomMaterials.length === 0 && (
-                  <p className="empty">No inventory items match "{bomPickerQuery}".</p>
-                )}
-                {filteredBomMaterials.map((m) => {
-                  const checked = bomLines.has(m.id);
-                  return (
-                    <div key={m.id} className="bom-picker-row">
-                      <label className="bom-picker-check">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleBomLine(m.id)}
-                        />
-                        <span>
-                          {m.code} — {m.name}
-                        </span>
-                      </label>
-                      {checked && (
-                        <input
-                          type="number"
-                          min={0}
-                          className="bom-picker-qty"
-                          value={bomLines.get(m.id)}
-                          onChange={(e) => setBomLineQty(m.id, Number(e.target.value))}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="form-actions span-2">
-                <button type="button" onClick={saveBom} disabled={bomSaving}>
-                  {bomSaving ? "Saving…" : "Save recipe"}
-                </button>
-                {bomSaved && <span className="hint hint-inline">Saved.</span>}
-              </div>
-            </>
-          )}
-
-          {products.length === 0 && (
-            <p className="empty span-2">
-              No products yet — products are created from the Production
-              Plan page's order picker, or imported directly.
-            </p>
-          )}
+        <div className="card-header-row">
+          <h2>Define a product's recipe</h2>
+          <select
+            className="bom-product-select"
+            value={bomProductId}
+            onChange={(e) => selectBomProduct(e.target.value)}
+          >
+            <option value="">— select a product —</option>
+            {productsByModel.map(([model, items]) => (
+              <optgroup key={model} label={model}>
+                {items.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.code} — {p.name}
+                    {p.bom?.length ? ` (${p.bom.length})` : ""}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
         </div>
+
+        {!bomProductId ? (
+          <p className="hint">
+            How much of each raw material one unit of a product uses. The
+            production plan's material forecast multiplies this by order
+            quantity — set it up once per product.
+          </p>
+        ) : (
+          <>
+            <p className="hint hint-inline">
+              {selectedProduct?.code} — {selectedProduct?.name} ·{" "}
+              <strong>{bomLines.size}</strong> component(s) per unit
+            </p>
+
+            {bomLines.size > 0 && (
+              <div className="bom-chip-list bom-chip-list-scroll">
+                {Array.from(bomLines, ([materialId, qty]) => (
+                  <span key={materialId} className="bom-chip">
+                    {materialById.get(materialId)?.code ?? "?"} ×{formatQty(qty)}
+                    <button
+                      type="button"
+                      className="bom-chip-remove"
+                      onClick={() => removeBomLine(materialId)}
+                      aria-label="Remove"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <input
+              className="bom-picker-search"
+              value={bomPickerQuery}
+              onChange={(e) => setBomPickerQuery(e.target.value)}
+              placeholder="Search inventory items to add…"
+            />
+
+            <div className="bom-picker">
+              {materials.length === 0 && (
+                <p className="empty">
+                  No inventory items yet — add some on the Inventory Stock page first.
+                </p>
+              )}
+              {materials.length > 0 && matchedMaterials.length === 0 && (
+                <p className="empty">No inventory items match "{bomPickerQuery}".</p>
+              )}
+              {visibleMaterials.map((m) => {
+                const checked = bomLines.has(m.id);
+                return (
+                  <div key={m.id} className="bom-picker-row">
+                    <label className="bom-picker-check">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleBomLine(m.id)}
+                      />
+                      <span>
+                        {m.code} — {m.name}
+                      </span>
+                    </label>
+                    {checked && (
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        className="bom-picker-qty"
+                        value={bomLines.get(m.id)}
+                        onChange={(e) => setBomLineQty(m.id, Number(e.target.value))}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {matchedMaterials.length > PICKER_LIMIT && (
+              <p className="hint hint-inline">
+                Showing {PICKER_LIMIT} of {matchedMaterials.length} — search to narrow it down.
+              </p>
+            )}
+
+            <div className="form-actions">
+              <button type="button" onClick={saveBom} disabled={bomSaving}>
+                {bomSaving ? "Saving…" : "Save recipe"}
+              </button>
+              <button type="button" className="secondary" onClick={() => selectBomProduct("")}>
+                Close
+              </button>
+              {bomSaved && <span className="hint hint-inline">Saved.</span>}
+            </div>
+          </>
+        )}
       </section>
 
       <section className="card">
@@ -231,37 +255,56 @@ export function BomPage({
               <tr>
                 <th>Product</th>
                 <th>Model</th>
-                <th>Raw materials per unit</th>
+                <th>Components</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {pageItems.map((p) => (
-                <tr key={p.id}>
-                  <td className="cell-wrap">
-                    {p.code} — {p.name}
-                  </td>
-                  <td>{p.model ?? "—"}</td>
-                  <td className="cell-wrap">
-                    {!p.bom || p.bom.length === 0 ? (
-                      <span className="status-badge outstanding">Not set</span>
-                    ) : (
-                      <ul className="consumed-list">
-                        {p.bom.map((line) => (
-                          <li key={line.materialId}>
-                            {materialById.get(line.materialId)?.code ?? "?"} ×{line.qty}
-                          </li>
-                        ))}
-                      </ul>
+              {pageItems.map((p) => {
+                const count = p.bom?.length ?? 0;
+                const isOpen = expanded.has(p.id);
+                return (
+                  <Fragment key={p.id}>
+                    <tr>
+                      <td className="cell-wrap">
+                        {p.code} — {p.name}
+                      </td>
+                      <td>{p.model ?? "—"}</td>
+                      <td>
+                        {count === 0 ? (
+                          <span className="status-badge outstanding">Not set</span>
+                        ) : (
+                          `${count} per unit`
+                        )}
+                      </td>
+                      <td className="row-actions">
+                        {count > 0 && (
+                          <button className="link" onClick={() => toggleExpanded(p.id)}>
+                            {isOpen ? "Hide" : "Show"}
+                          </button>
+                        )}
+                        <button className="link" onClick={() => selectBomProduct(p.id)}>
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                    {isOpen && count > 0 && (
+                      <tr className="detail-row">
+                        <td colSpan={4}>
+                          <div className="bom-detail-grid">
+                            {p.bom!.map((line) => (
+                              <span key={line.materialId}>
+                                {materialById.get(line.materialId)?.code ?? line.materialId}
+                                <strong> ×{formatQty(line.qty)}</strong>
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                  <td className="row-actions">
-                    <button className="link" onClick={() => selectBomProduct(p.id)}>
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                  </Fragment>
+                );
+              })}
               {products.length === 0 && (
                 <tr>
                   <td colSpan={4} className="empty">

@@ -7,6 +7,7 @@ import {
   updateProductionPlanEntry,
 } from "../lib/repo";
 import { getProductionPlanItems, isoToday } from "../lib/mrp";
+import { formatQty } from "../lib/format";
 import { usePagedSearch } from "../lib/pagination";
 import { Pagination } from "../components/Pagination";
 import { SearchBox } from "../components/SearchBox";
@@ -231,7 +232,7 @@ export function ProductionPlanPage({
     const items = getProductionPlanItems(entry);
     if (items.length === 0) return "—";
     return items
-      .map((it) => `${materialById.get(it.materialId)?.code ?? "?"} ×${it.qty}`)
+      .map((it) => `${materialById.get(it.materialId)?.code ?? "?"} ×${formatQty(it.qty)}`)
       .join(", ");
   }
 
@@ -279,12 +280,12 @@ export function ProductionPlanPage({
                           {row.material?.code ?? row.materialId} —{" "}
                           {row.material?.name ?? "Unknown item"}
                         </td>
-                        <td>{row.forecastQty}</td>
-                        <td>{row.onHand}</td>
+                        <td>{formatQty(row.forecastQty)}</td>
+                        <td>{formatQty(row.onHand)}</td>
                         <td>
                           {row.shortfall > 0 ? (
                             <span className="status-badge cancelled">
-                              {row.shortfall} short
+                              {formatQty(row.shortfall)} short
                             </span>
                           ) : (
                             "—"
