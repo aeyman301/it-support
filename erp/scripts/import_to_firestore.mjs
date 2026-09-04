@@ -8,11 +8,27 @@
 // entries all use deterministic IDs (part code / part code + month), so a
 // second import of the same or a newer monthly file upserts rather than
 // duplicating.
+//
+// Materials get special handling: onHandQty is always refreshed from the
+// spreadsheet (it's a live stock snapshot), but leadTimeDays, safetyStock,
+// minOrderQty, supplier, shipFrom and notes are preserved untouched on any
+// material that already exists — those get set once by hand (or from a
+// dedicated lead-time workbook) and this monthly MRP report doesn't carry
+// trustworthy values for them (it defaults leadTimeDays to 0 for every
+// row). Only brand-new materials get the full record, defaults included.
+// Materials tagged kind:"product" are never touched by this import.
 
 import { readFileSync } from "node:fs";
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth, signInAnonymously } from "firebase/auth";
-import { connectFirestoreEmulator, getFirestore, doc, writeBatch } from "firebase/firestore";
+import {
+  collection,
+  connectFirestoreEmulator,
+  doc,
+  getDocs,
+  getFirestore,
+  writeBatch,
+} from "firebase/firestore";
 
 const filePath = process.argv[2];
 if (!filePath) {
@@ -53,6 +69,56 @@ await signInAnonymously(auth);
 
 const data = JSON.parse(readFileSync(filePath, "utf-8"));
 
+const PRESERVE_ON_EXISTING = [
+  "leadTimeDays",
+  "safetyStock",
+  "minOrderQty",
+  "supplier",
+  "shipFrom",
+  "notes",
+];
+
+async function upsertMaterials(records) {
+  const existingSnap = await getDocs(collection(db, "materials"));
+  const existing = {};
+  existingSnap.forEach((d) => { existing[d.id] = d.data(); });
+
+  const BATCH_SIZE = 400;
+  let written = 0;
+  let created = 0;
+  let merged = 0;
+  let skippedProducts = 0;
+  for (let i = 0; i < records.length; i += BATCH_SIZE) {
+    const chunk = records.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+    for (const record of chunk) {
+      const { id, ...fields } = record;
+      const prior = existing[id];
+      if (prior?.kind === "product") {
+        skippedProducts++;
+        continue;
+      }
+      if (prior) {
+        const payload = { ...fields };
+        for (const f of PRESERVE_ON_EXISTING) {
+          if (prior[f] !== undefined) delete payload[f];
+        }
+        batch.set(doc(db, "materials", id), { ...payload, updatedAt: Date.now() }, { merge: true });
+        merged++;
+      } else {
+        batch.set(doc(db, "materials", id), { ...fields, updatedAt: Date.now() });
+        created++;
+      }
+    }
+    await batch.commit();
+    written += chunk.length;
+    console.log(`materials: ${written}/${records.length}`);
+  }
+  console.log(
+    `materials: ${created} created, ${merged} merged (curated fields preserved), ${skippedProducts} skipped (kind:product)`,
+  );
+}
+
 async function upsertAll(collectionName, records) {
   const BATCH_SIZE = 400; // stay under Firestore's 500-write batch limit
   let written = 0;
@@ -72,7 +138,7 @@ async function upsertAll(collectionName, records) {
   }
 }
 
-await upsertAll("materials", data.materials);
+await upsertMaterials(data.materials);
 await upsertAll("purchaseOrders", data.purchaseOrders);
 await upsertAll("productionPlan", data.productionPlan);
 

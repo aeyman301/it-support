@@ -7,10 +7,16 @@ file that scripts/import_to_firestore.mjs can load.
 Usage:
     python3 extract_mrp_xlsx.py <path-to-xlsx> [--limit N] [--out out.json]
 
-The workbook's layout (sheet names, header rows, column positions) is a
-recurring monthly report format from the supply chain team. If a future
-month's file shifts columns around, adjust the constants below rather than
-the parsing logic.
+The workbook's layout (sheet names, header rows) is a recurring monthly
+report format from the supply chain team, but the MRP sheet's *column
+positions* shift from month to month (extra columns get inserted, e.g. a
+"shortage" or "Incoming 1st week" column). Column indices are therefore
+detected dynamically from the header row each run rather than hardcoded:
+the incoming-PO and demand-forecast columns are found by scanning for
+date-valued header cells, split into two groups by the "Plan to order"
+label column, with the very first date column (the "STOCK AS <date>"
+snapshot) explicitly excluded since it's a stock snapshot, not a schedule
+entry.
 """
 
 import argparse
@@ -37,10 +43,7 @@ MRP_SHEET = "MRP"
 MRP_HEADER_ROW = 9
 MRP_FIRST_DATA_ROW = 10
 MRP_COL_CODE = 2  # PNA PART NO
-# Monthly incoming-PO-quantity columns (matches OPEN PO ALL's schedule).
-MRP_INCOMING_COLS = range(10, 16)  # Aug26..Jan27
-# Monthly forecasted-usage/demand columns.
-MRP_DEMAND_COLS = range(20, 30)  # Aug26..May27
+PLAN_TO_ORDER_LABEL = "plan to order"
 
 DEFAULT_MIN_ORDER_QTY = 1
 
@@ -65,10 +68,45 @@ def as_number(value):
     return None
 
 
+def find_mrp_date_columns(ws, header_row: int, max_col: int):
+    """Returns (incoming_cols, demand_cols) as {col_index: iso_date} dicts,
+    detected from the header row rather than hardcoded positions. The first
+    date column found is the "STOCK AS <date>" snapshot and is excluded;
+    date columns before the "Plan to order" label are incoming-PO schedule,
+    date columns after it are the demand forecast.
+    """
+    header = [ws.cell(row=header_row, column=c).value for c in range(1, max_col + 1)]
+
+    plan_to_order_col = None
+    for i, val in enumerate(header, start=1):
+        if isinstance(val, str) and val.strip().lower() == PLAN_TO_ORDER_LABEL:
+            plan_to_order_col = i
+            break
+    if plan_to_order_col is None:
+        raise ValueError(f'Could not find a "{PLAN_TO_ORDER_LABEL}" column in the MRP header row')
+
+    first_date_col = None
+    incoming_cols = {}
+    demand_cols = {}
+    for i, val in enumerate(header, start=1):
+        iso = month_end_iso(val)
+        if not iso:
+            continue
+        if first_date_col is None:
+            first_date_col = i  # the "STOCK AS <date>" snapshot — excluded
+            continue
+        if i < plan_to_order_col:
+            incoming_cols[i] = iso
+        elif i > plan_to_order_col:
+            demand_cols[i] = iso
+
+    return incoming_cols, demand_cols
+
+
 def extract(path: str, limit: int | None):
     wb = openpyxl.load_workbook(path, data_only=True)
 
-    # ---- Materials (+ on-hand stock) ----
+    # ---- Materials (+ on-hand stock + supplier) ----
     ws = wb[RAW_STOCK_SHEET]
     materials = []
     seen_codes = set()
@@ -87,19 +125,19 @@ def extract(path: str, limit: int | None):
         uom = ws.cell(row=r, column=COL_UOM).value or "pcs"
         onhand = as_number(ws.cell(row=r, column=COL_ONHAND).value) or 0
 
-        materials.append(
-            {
-                "id": code,
-                "code": code,
-                "name": str(desc).strip(),
-                "uom": str(uom).strip(),
-                "leadTimeDays": 0,
-                "safetyStock": 0,
-                "minOrderQty": DEFAULT_MIN_ORDER_QTY,
-                "onHandQty": round(onhand),
-                "notes": f"Supplier: {supplier}" if supplier else "",
-            }
-        )
+        material = {
+            "id": code,
+            "code": code,
+            "name": str(desc).strip(),
+            "uom": str(uom).strip(),
+            "leadTimeDays": 0,
+            "safetyStock": 0,
+            "minOrderQty": DEFAULT_MIN_ORDER_QTY,
+            "onHandQty": round(onhand),
+        }
+        if supplier:
+            material["supplier"] = supplier
+        materials.append(material)
         if limit and len(materials) >= limit:
             break
 
@@ -107,9 +145,7 @@ def extract(path: str, limit: int | None):
 
     # ---- Purchase orders + production plan, from the MRP sheet ----
     ws2 = wb[MRP_SHEET]
-    header = [ws2.cell(row=MRP_HEADER_ROW, column=c).value for c in range(1, 30)]
-    incoming_dates = {c: month_end_iso(header[c - 1]) for c in MRP_INCOMING_COLS}
-    demand_dates = {c: month_end_iso(header[c - 1]) for c in MRP_DEMAND_COLS}
+    incoming_dates, demand_dates = find_mrp_date_columns(ws2, MRP_HEADER_ROW, ws2.max_column)
 
     today_iso = date.today().isoformat()
     purchase_orders = []
@@ -128,8 +164,6 @@ def extract(path: str, limit: int | None):
         matched += 1
 
         for col, iso_date in incoming_dates.items():
-            if not iso_date:
-                continue
             qty = as_number(ws2.cell(row=r, column=col).value)
             if not qty or qty <= 0:
                 continue
@@ -148,8 +182,6 @@ def extract(path: str, limit: int | None):
             )
 
         for col, iso_date in demand_dates.items():
-            if not iso_date:
-                continue
             qty = as_number(ws2.cell(row=r, column=col).value)
             if not qty or qty <= 0:
                 continue
@@ -175,6 +207,8 @@ def extract(path: str, limit: int | None):
             "productionPlan": len(production_plan),
             "mrpRowsMatched": matched,
             "mrpRowsSkippedNoMaterial": skipped,
+            "incomingDateColumns": incoming_dates,
+            "demandDateColumns": demand_dates,
         },
     }
 
