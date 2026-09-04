@@ -119,6 +119,75 @@ async function upsertMaterials(records) {
   );
 }
 
+// Component codes are written slightly differently between the workbook's
+// sheets — the BOM sheet has "71162783" where the stock sheet has
+// "7116-2783". Matching on letters and digits alone lets a BOM line point
+// at the material that already exists instead of creating a near-duplicate.
+const normalizeCode = (s) => String(s).toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+async function upsertProductsWithBom(products, components) {
+  const snap = await getDocs(collection(db, "materials"));
+  const existing = {};
+  snap.forEach((d) => { existing[d.id] = d.data(); });
+
+  const rawByNormalized = new Map();
+  for (const [id, data] of Object.entries(existing)) {
+    if (data.kind === "product") continue;
+    rawByNormalized.set(normalizeCode(id), id);
+  }
+
+  // Create any component the BOM references that isn't a material yet, so
+  // no BOM line ends up pointing at a missing record.
+  const resolve = (code) => (existing[code] ? code : rawByNormalized.get(normalizeCode(code)) ?? code);
+  const missing = (components ?? []).filter((c) => !existing[resolve(c.id)]);
+  if (missing.length > 0) {
+    await upsertMaterials(missing);
+    for (const c of missing) existing[c.id] = c;
+    for (const c of missing) rawByNormalized.set(normalizeCode(c.id), c.id);
+  }
+
+  let created = 0;
+  let updated = 0;
+  let remapped = 0;
+  const BATCH_SIZE = 400;
+  for (let i = 0; i < products.length; i += BATCH_SIZE) {
+    const chunk = products.slice(i, i + BATCH_SIZE);
+    const batch = writeBatch(db);
+    for (const product of chunk) {
+      const bom = product.bom.map((line) => {
+        const resolved = resolve(line.materialId);
+        if (resolved !== line.materialId) remapped++;
+        return { materialId: resolved, qty: line.qty };
+      });
+      const prior = existing[product.id];
+      if (prior) {
+        // Keep the product's existing name/model (they may have been set by
+        // hand with friendlier labels); only the recipe is refreshed.
+        batch.set(
+          doc(db, "materials", product.id),
+          { bom, updatedAt: Date.now() },
+          { merge: true },
+        );
+        updated++;
+      } else {
+        batch.set(doc(db, "materials", product.id), {
+          code: product.code,
+          name: product.name,
+          model: product.model,
+          kind: "product",
+          bom,
+          updatedAt: Date.now(),
+        });
+        created++;
+      }
+    }
+    await batch.commit();
+  }
+  console.log(
+    `products: ${created} created, ${updated} updated with a BOM, ${missing.length} missing components created, ${remapped} BOM lines remapped to an existing code`,
+  );
+}
+
 async function upsertAll(collectionName, records) {
   const BATCH_SIZE = 400; // stay under Firestore's 500-write batch limit
   let written = 0;
@@ -138,9 +207,10 @@ async function upsertAll(collectionName, records) {
   }
 }
 
-await upsertMaterials(data.materials);
-await upsertAll("purchaseOrders", data.purchaseOrders);
-await upsertAll("productionPlan", data.productionPlan);
+if (data.materials) await upsertMaterials(data.materials);
+if (data.products) await upsertProductsWithBom(data.products, data.components);
+if (data.purchaseOrders) await upsertAll("purchaseOrders", data.purchaseOrders);
+if (data.productionPlan) await upsertAll("productionPlan", data.productionPlan);
 
 console.log("Done.", data.stats);
 process.exit(0);
