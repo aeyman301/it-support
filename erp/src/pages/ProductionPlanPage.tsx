@@ -228,6 +228,16 @@ export function ProductionPlanPage({
     return { rows, entriesWithoutBom };
   }, [currentMonthEntries, productById, materialById]);
 
+  // A month's plan explodes into hundreds of materials, so the forecast gets
+  // the same search + paging treatment as every other long table here.
+  const forecastPaged = usePagedSearch(
+    materialForecast.rows,
+    (row, q) =>
+      (row.material?.code.toLowerCase().includes(q) ?? false) ||
+      (row.material?.name.toLowerCase().includes(q) ?? false) ||
+      row.materialId.toLowerCase().includes(q),
+  );
+
   function itemsSummary(entry: ProductionPlanEntry) {
     const items = getProductionPlanItems(entry);
     if (items.length === 0) return "—";
@@ -255,7 +265,16 @@ export function ProductionPlanPage({
               unit(s).
             </p>
 
-            <h3>Material forecast</h3>
+            <div className="card-header-row">
+              <h3>Material forecast ({materialForecast.rows.length})</h3>
+              {materialForecast.rows.length > 0 && (
+                <SearchBox
+                  value={forecastPaged.query}
+                  onChange={forecastPaged.setQuery}
+                  placeholder="Search inventory item…"
+                />
+              )}
+            </div>
             {materialForecast.rows.length === 0 ? (
               <p className="empty">
                 None of this month's products have a Bill of Materials
@@ -274,7 +293,7 @@ export function ProductionPlanPage({
                     </tr>
                   </thead>
                   <tbody>
-                    {materialForecast.rows.map((row) => (
+                    {forecastPaged.pageItems.map((row) => (
                       <tr key={row.materialId} className={row.shortfall > 0 ? "urgent-row" : ""}>
                         <td className="cell-wrap">
                           {row.material?.code ?? row.materialId} —{" "}
@@ -293,9 +312,24 @@ export function ProductionPlanPage({
                         </td>
                       </tr>
                     ))}
+                    {forecastPaged.total === 0 && (
+                      <tr>
+                        <td colSpan={4} className="empty">
+                          No inventory items match "{forecastPaged.query}".
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+            )}
+            {materialForecast.rows.length > 0 && (
+              <Pagination
+                page={forecastPaged.page}
+                pageCount={forecastPaged.pageCount}
+                total={forecastPaged.total}
+                onChange={forecastPaged.setPage}
+              />
             )}
             {materialForecast.entriesWithoutBom > 0 && (
               <p className="hint hint-inline">

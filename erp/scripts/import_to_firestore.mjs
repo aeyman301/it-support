@@ -148,19 +148,27 @@ async function upsertProductsWithBom(products, components) {
 
   let created = 0;
   let updated = 0;
+  let skippedNoBom = 0;
   let remapped = 0;
   const BATCH_SIZE = 400;
   for (let i = 0; i < products.length; i += BATCH_SIZE) {
     const chunk = products.slice(i, i + BATCH_SIZE);
     const batch = writeBatch(db);
     for (const product of chunk) {
-      const bom = product.bom.map((line) => {
+      const bom = (product.bom ?? []).map((line) => {
         const resolved = resolve(line.materialId);
         if (resolved !== line.materialId) remapped++;
         return { materialId: resolved, qty: line.qty };
       });
       const prior = existing[product.id];
       if (prior) {
+        // Never blank out a recipe that's already set: an import carrying no
+        // BOM (e.g. the harness plan, which only knows product master data)
+        // leaves the existing one alone.
+        if (bom.length === 0) {
+          skippedNoBom++;
+          continue;
+        }
         // Keep the product's existing name/model (they may have been set by
         // hand with friendlier labels); only the recipe is refreshed.
         batch.set(
@@ -175,7 +183,7 @@ async function upsertProductsWithBom(products, components) {
           name: product.name,
           model: product.model,
           kind: "product",
-          bom,
+          ...(bom.length > 0 ? { bom } : {}),
           updatedAt: Date.now(),
         });
         created++;
@@ -184,7 +192,7 @@ async function upsertProductsWithBom(products, components) {
     await batch.commit();
   }
   console.log(
-    `products: ${created} created, ${updated} updated with a BOM, ${missing.length} missing components created, ${remapped} BOM lines remapped to an existing code`,
+    `products: ${created} created, ${updated} updated with a BOM, ${skippedNoBom} left as-is (import carried no BOM), ${missing.length} missing components created, ${remapped} BOM lines remapped to an existing code`,
   );
 }
 
