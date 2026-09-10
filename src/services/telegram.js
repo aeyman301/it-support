@@ -46,7 +46,7 @@ function notifyNewTicket(ticket) {
   const emoji = PRIORITY_EMOJI[ticket.priority] || "⚪";
   const incidentTag = ticket.is_incident ? "\n🚨 <b>Downtime incident</b> - clock started" : "";
   const text =
-    `🆕 <b>New IT Ticket #${ticket.id}</b>\n` +
+    `🆕 <b>New IT Ticket #${ticket.number}</b>\n` +
     `${emoji} Priority: <b>${escapeHtml(ticket.priority)}</b>\n` +
     `📂 Category: ${escapeHtml(ticket.category)}\n` +
     `📝 ${escapeHtml(ticket.title)}\n` +
@@ -57,7 +57,7 @@ function notifyNewTicket(ticket) {
 
 function notifyStatusChange(ticket, previousStatus) {
   const text =
-    `🔄 <b>Ticket #${ticket.id}</b> status changed\n` +
+    `🔄 <b>Ticket #${ticket.number}</b> status changed\n` +
     `${escapeHtml(previousStatus)} → <b>${escapeHtml(ticket.status)}</b>\n` +
     `📝 ${escapeHtml(ticket.title)}` +
     (ticket.status === "resolved" && ticket.downtime_start
@@ -68,7 +68,7 @@ function notifyStatusChange(ticket, previousStatus) {
 
 function notifyComment(ticket, message, author) {
   const text =
-    `💬 <b>Ticket #${ticket.id}</b> update\n` +
+    `💬 <b>Ticket #${ticket.number}</b> update\n` +
     `📝 ${escapeHtml(ticket.title)}\n` +
     `${escapeHtml(author || "IT Support")}: ${escapeHtml(message)}`;
   return sendTelegramMessage(text);

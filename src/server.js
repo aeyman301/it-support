@@ -3,6 +3,8 @@ const path = require("path");
 const express = require("express");
 
 const ticketsRouter = require("./routes/tickets");
+const telegram = require("./services/telegram");
+const email = require("./services/email");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,7 +13,11 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
 
 app.get("/api/config", (req, res) => {
-  res.json({ adminRequired: true });
+  res.json({
+    adminRequired: true,
+    telegramEnabled: telegram.enabled,
+    emailEnabled: email.enabled,
+  });
 });
 
 app.use("/api/tickets", ticketsRouter);

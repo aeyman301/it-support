@@ -55,10 +55,13 @@ async function sendMail({ subject, html, to }) {
 function ticketDetailsHtml(ticket) {
   return `
     <table style="border-collapse:collapse;font-family:sans-serif;font-size:14px">
-      <tr><td style="padding:4px 8px;color:#666">Ticket ID</td><td style="padding:4px 8px"><b>#${ticket.id}</b></td></tr>
+      <tr><td style="padding:4px 8px;color:#666">Ticket #</td><td style="padding:4px 8px"><b>#${ticket.number}</b></td></tr>
       <tr><td style="padding:4px 8px;color:#666">Title</td><td style="padding:4px 8px">${escapeHtml(ticket.title)}</td></tr>
       <tr><td style="padding:4px 8px;color:#666">Description</td><td style="padding:4px 8px">${escapeHtml(ticket.description).replace(/\n/g, "<br>")}</td></tr>
       <tr><td style="padding:4px 8px;color:#666">Requester</td><td style="padding:4px 8px">${escapeHtml(ticket.requester_name)} (${escapeHtml(ticket.requester_email)})</td></tr>
+      <tr><td style="padding:4px 8px;color:#666">Department</td><td style="padding:4px 8px">${escapeHtml(ticket.department || "-")}</td></tr>
+      <tr><td style="padding:4px 8px;color:#666">Location</td><td style="padding:4px 8px">${escapeHtml(ticket.location || "-")}</td></tr>
+      <tr><td style="padding:4px 8px;color:#666">Device</td><td style="padding:4px 8px">${escapeHtml(ticket.device || "-")}</td></tr>
       <tr><td style="padding:4px 8px;color:#666">Category</td><td style="padding:4px 8px">${escapeHtml(ticket.category)}</td></tr>
       <tr><td style="padding:4px 8px;color:#666">Priority</td><td style="padding:4px 8px">${escapeHtml(ticket.priority)}</td></tr>
       <tr><td style="padding:4px 8px;color:#666">Status</td><td style="padding:4px 8px">${escapeHtml(ticket.status)}</td></tr>
@@ -70,7 +73,7 @@ function ticketDetailsHtml(ticket) {
 
 function notifyNewTicket(ticket) {
   return sendMail({
-    subject: `[IT Ticket #${ticket.id}] ${ticket.title}`,
+    subject: `[IT Ticket #${ticket.number}] ${ticket.title}`,
     html: `<h2>New IT support ticket opened</h2>${ticketDetailsHtml(ticket)}`,
   });
 }
@@ -83,8 +86,8 @@ function notifyStatusChange(ticket, previousStatus) {
     downtimeLine = `<p><b>Downtime duration:</b> ${formatDuration(end - start)} (started ${ticket.downtime_start}${ticket.downtime_end ? `, ended ${ticket.downtime_end}` : ", ongoing"})</p>`;
   }
   return sendMail({
-    subject: `[IT Ticket #${ticket.id}] Status changed: ${previousStatus} -> ${ticket.status}`,
-    html: `<h2>Ticket #${ticket.id} status updated</h2><p>${escapeHtml(previousStatus)} &rarr; <b>${escapeHtml(ticket.status)}</b></p>${downtimeLine}${ticketDetailsHtml(ticket)}`,
+    subject: `[IT Ticket #${ticket.number}] Status changed: ${previousStatus} -> ${ticket.status}`,
+    html: `<h2>Ticket #${ticket.number} status updated</h2><p>${escapeHtml(previousStatus)} &rarr; <b>${escapeHtml(ticket.status)}</b></p>${downtimeLine}${ticketDetailsHtml(ticket)}`,
   });
 }
 

@@ -7,48 +7,124 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="topbar">
-  <h1>🛠️ IT Support Tickets</h1>
-  <div class="topbar-actions">
-    <button id="adminBtn" class="btn btn-ghost">Admin sign-in</button>
-    <button id="newTicketBtn" class="btn btn-primary">+ New Ticket</button>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-mark">IT</span>Support</div>
+    <nav class="nav">
+      <button class="nav-item active" data-section="tickets"><i data-icon="tickets"></i>Tickets</button>
+      <button class="nav-item" data-section="kb"><i data-icon="book"></i>Knowledge Base</button>
+      <button class="nav-item" data-section="users"><i data-icon="users"></i>Users</button>
+      <button class="nav-item" data-section="reports"><i data-icon="reports"></i>Reports</button>
+      <button class="nav-item" data-section="settings"><i data-icon="settings"></i>Settings</button>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <label class="search-box">
+        <i data-icon="search"></i>
+        <input type="text" id="searchInput" placeholder="Search tickets...">
+      </label>
+      <div class="topbar-actions">
+        <button id="newTicketBtn" class="btn btn-primary">+ New Ticket</button>
+        <div class="avatar" id="avatarBtn" title="Account"><span id="avatarInitials">?</span></div>
+      </div>
+    </header>
+
+    <section id="incidentBanner" class="incident-banner hidden">
+      <span class="pulse"></span>
+      <span id="incidentBannerText"></span>
+    </section>
+
+    <!-- Tickets section: list view -->
+    <main id="section-tickets" class="section">
+      <div id="ticketsListView">
+        <div class="toolbar">
+          <div class="tabs" id="statusTabs">
+            <button class="tab active" data-status="">All</button>
+            <button class="tab" data-status="open">Open</button>
+            <button class="tab" data-status="in_progress">In Progress</button>
+            <button class="tab" data-status="resolved">Resolved</button>
+            <button class="tab" data-status="closed">Closed</button>
+          </div>
+          <button id="refreshBtn" class="icon-btn" title="Refresh"><i data-icon="refresh"></i></button>
+        </div>
+        <div id="ticketList" class="ticket-list"></div>
+      </div>
+
+      <!-- Tickets section: detail view -->
+      <div id="ticketDetailView" class="hidden">
+        <button class="back-link" id="backToListBtn"><i data-icon="back"></i>All Tickets</button>
+        <div id="detailCard" class="detail-card"></div>
+      </div>
+    </main>
+
+    <!-- Placeholder sections -->
+    <main id="section-kb" class="section hidden">
+      <div class="placeholder"><i data-icon="book" class="placeholder-icon"></i>
+        <h2>Knowledge Base</h2>
+        <p>Coming soon — self-service articles and troubleshooting guides for common issues.</p>
+      </div>
+    </main>
+    <main id="section-users" class="section hidden">
+      <div class="placeholder"><i data-icon="users" class="placeholder-icon"></i>
+        <h2>Users</h2>
+        <p>Coming soon — manage IT staff and requester accounts here.</p>
+      </div>
+    </main>
+    <main id="section-reports" class="section hidden">
+      <div class="placeholder"><i data-icon="reports" class="placeholder-icon"></i>
+        <h2>Reports</h2>
+        <p>Coming soon — ticket volume, resolution time, and downtime analytics.</p>
+      </div>
+    </main>
+    <main id="section-settings" class="section hidden">
+      <div class="settings-page">
+        <h2>Settings</h2>
+
+        <div class="settings-card">
+          <h3>Admin sign-in</h3>
+          <p class="settings-hint">Sign in with the shared admin token to change ticket status and post updates.</p>
+          <form id="adminForm">
+            <label>Your name (for the avatar + activity log)
+              <input type="text" name="displayName" id="adminDisplayName" placeholder="e.g. Jordan Evans">
+            </label>
+            <label>Admin token
+              <input type="password" name="token" id="adminTokenInput" placeholder="ADMIN_TOKEN from .env">
+            </label>
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" id="adminSignOutBtn" class="btn btn-ghost hidden">Sign out</button>
+          </form>
+          <p id="adminStatus" class="settings-status"></p>
+        </div>
+
+        <div class="settings-card">
+          <h3>Integrations</h3>
+          <div class="integration-row"><span>Telegram notifications</span><span id="telegramStatus" class="badge">-</span></div>
+          <div class="integration-row"><span>Email documentation</span><span id="emailStatus" class="badge">-</span></div>
+          <p class="settings-hint">Configured via environment variables — see the project README.</p>
+        </div>
+      </div>
+    </main>
   </div>
-</header>
-
-<main>
-  <section id="incidentBanner" class="incident-banner hidden">
-    <span class="pulse"></span>
-    <span id="incidentBannerText"></span>
-  </section>
-
-  <div class="toolbar">
-    <div class="tabs" id="statusTabs">
-      <button class="tab active" data-status="">All</button>
-      <button class="tab" data-status="open">Open</button>
-      <button class="tab" data-status="in_progress">In Progress</button>
-      <button class="tab" data-status="resolved">Resolved</button>
-      <button class="tab" data-status="closed">Closed</button>
-    </div>
-    <button id="refreshBtn" class="btn btn-ghost" title="Refresh">⟳</button>
-  </div>
-
-  <div id="ticketList" class="ticket-list"></div>
-</main>
+</div>
 
 <!-- New Ticket Modal -->
 <div id="newTicketModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
       <h2>New Support Ticket</h2>
-      <button class="close-btn" data-close="newTicketModal">&times;</button>
+      <button class="close-btn" data-close="newTicketModal"><i data-icon="close"></i></button>
     </div>
     <form id="newTicketForm">
-      <label>Your name
-        <input type="text" name="requester_name" required>
-      </label>
-      <label>Your email
-        <input type="email" name="requester_email" required>
-      </label>
+      <div class="form-row">
+        <label>Your name
+          <input type="text" name="requester_name" required>
+        </label>
+        <label>Your email
+          <input type="email" name="requester_email" required>
+        </label>
+      </div>
       <label>Title
         <input type="text" name="title" required maxlength="150">
       </label>
@@ -56,6 +132,17 @@
         <textarea name="description" rows="4" required></textarea>
       </label>
       <div class="form-row">
+        <label>Department
+          <input type="text" name="department" placeholder="e.g. Marketing">
+        </label>
+        <label>Location
+          <input type="text" name="location" placeholder="e.g. Office - 2nd Floor">
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Device
+          <input type="text" name="device" placeholder="e.g. Windows 11 (Laptop)">
+        </label>
         <label>Category
           <select name="category">
             <option value="hardware">Hardware</option>
@@ -65,15 +152,18 @@
             <option value="other" selected>Other</option>
           </select>
         </label>
-        <label>Priority
-          <select name="priority">
-            <option value="low">Low</option>
-            <option value="medium" selected>Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-        </label>
       </div>
+      <label>Priority
+        <select name="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+      </label>
+      <label>Attachments
+        <input type="file" name="attachments" multiple>
+      </label>
       <label class="checkbox-row">
         <input type="checkbox" name="is_incident">
         This is a service outage / downtime incident (starts a downtime counter)
@@ -84,33 +174,7 @@
   </div>
 </div>
 
-<!-- Admin Sign-in Modal -->
-<div id="adminModal" class="modal hidden">
-  <div class="modal-content modal-sm">
-    <div class="modal-header">
-      <h2>Admin Sign-in</h2>
-      <button class="close-btn" data-close="adminModal">&times;</button>
-    </div>
-    <form id="adminForm">
-      <label>Admin token
-        <input type="password" name="token" placeholder="ADMIN_TOKEN from .env" required>
-      </label>
-      <button type="submit" class="btn btn-primary btn-block">Save</button>
-    </form>
-  </div>
-</div>
-
-<!-- Ticket Detail Modal -->
-<div id="detailModal" class="modal hidden">
-  <div class="modal-content modal-lg">
-    <div class="modal-header">
-      <h2 id="detailTitle">Ticket</h2>
-      <button class="close-btn" data-close="detailModal">&times;</button>
-    </div>
-    <div id="detailBody"></div>
-  </div>
-</div>
-
+<script src="icons.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
