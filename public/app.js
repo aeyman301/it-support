@@ -1,4 +1,4 @@
-const API = "/api/tickets";
+const API = "api/tickets";
 let currentStatusFilter = "";
 let searchQuery = "";
 let tickets = [];
@@ -97,7 +97,7 @@ $("#avatarBtn").addEventListener("click", () => showSection("settings"));
 
 async function loadIntegrationStatus() {
   try {
-    const res = await fetch("/api/config");
+    const res = await fetch("api/config");
     const cfg = await res.json();
     $("#telegramStatus").textContent = cfg.telegramEnabled ? "Enabled" : "Disabled";
     $("#telegramStatus").className = `badge ${cfg.telegramEnabled ? "badge-resolved" : "badge-closed"}`;

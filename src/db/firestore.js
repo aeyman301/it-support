@@ -34,5 +34,5 @@ module.exports = createTicketRepository({
   firestore,
   FieldValue,
   uploadsDir,
-  uploadsPublicPath: "/uploads",
+  uploadsPublicPath: "uploads",
 });
