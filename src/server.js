@@ -1,16 +1,21 @@
 require("dotenv").config();
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
 
 const ticketsRouter = require("./routes/tickets");
 const telegram = require("./services/telegram");
 const email = require("./services/email");
+const uploadsDir = require("./uploadDir");
+
+fs.mkdirSync(uploadsDir, { recursive: true });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
+app.use("/uploads", express.static(uploadsDir));
 
 app.get("/api/config", (req, res) => {
   res.json({

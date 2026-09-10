@@ -75,16 +75,13 @@ router.post("/", upload.array("attachments", 5), async (req, res, next) => {
   }
 });
 
-// Get single ticket with its event log and signed attachment URLs
+// Get single ticket with its event log
 router.get("/:id", async (req, res, next) => {
   try {
     const ticket = await repo.getTicket(req.params.id);
     if (!ticket) return res.status(404).json({ error: "Ticket not found" });
-    const [events, attachments] = await Promise.all([
-      repo.listEvents(ticket.id),
-      repo.resolveAttachmentUrls(ticket.attachments),
-    ]);
-    res.json({ ...ticket, attachments, events });
+    const events = await repo.listEvents(ticket.id);
+    res.json({ ...ticket, events });
   } catch (err) {
     next(err);
   }

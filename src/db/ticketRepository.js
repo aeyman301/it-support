@@ -1,3 +1,6 @@
+const fs = require("fs/promises");
+const path = require("path");
+
 const STATUSES = ["open", "in_progress", "resolved", "closed"];
 const PRIORITIES = ["low", "medium", "high", "critical"];
 
@@ -5,11 +8,17 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function sanitizeFilename(name) {
+  const base = path.basename(name).replace(/[^a-zA-Z0-9._-]/g, "_");
+  return base || "file";
+}
+
 /**
- * Firestore-backed ticket repository, built as an injectable factory so tests
- * can swap in a mock {firestore, FieldValue, bucket} without touching real Firebase.
+ * Firestore-backed ticket repository (tickets + activity log), with attachments
+ * stored on local disk under uploadsDir. Built as an injectable factory so tests
+ * can swap in a mock {firestore, FieldValue} without touching real Firebase.
  */
-function createTicketRepository({ firestore, FieldValue, bucket }) {
+function createTicketRepository({ firestore, FieldValue, uploadsDir, uploadsPublicPath = "/uploads" }) {
   const ticketsCol = firestore.collection("tickets");
   const counterRef = firestore.collection("counters").doc("tickets");
 
@@ -111,37 +120,20 @@ function createTicketRepository({ firestore, FieldValue, bucket }) {
   }
 
   async function uploadAttachment(ticketId, file) {
-    if (!bucket) {
-      throw new Error("Firebase Storage is not configured (set FIREBASE_STORAGE_BUCKET)");
+    if (!uploadsDir) {
+      throw new Error("Attachment storage is not configured (set UPLOAD_DIR)");
     }
-    const storagePath = `tickets/${ticketId}/${Date.now()}-${file.originalname}`;
-    await bucket.file(storagePath).save(file.buffer, {
-      contentType: file.mimetype,
-      resumable: false,
-    });
+    const ticketDir = path.join(uploadsDir, "tickets", ticketId);
+    await fs.mkdir(ticketDir, { recursive: true });
+    const filename = `${Date.now()}-${sanitizeFilename(file.originalname)}`;
+    await fs.writeFile(path.join(ticketDir, filename), file.buffer);
     return {
       name: file.originalname,
-      path: storagePath,
+      url: `${uploadsPublicPath}/tickets/${ticketId}/${filename}`,
       size: file.size,
       contentType: file.mimetype,
       uploaded_at: nowIso(),
     };
-  }
-
-  async function signAttachmentUrl(storagePath) {
-    if (!bucket) return null;
-    const [url] = await bucket.file(storagePath).getSignedUrl({
-      action: "read",
-      expires: Date.now() + 60 * 60 * 1000,
-    });
-    return url;
-  }
-
-  async function resolveAttachmentUrls(attachments) {
-    if (!attachments || attachments.length === 0) return [];
-    return Promise.all(
-      attachments.map(async (a) => ({ ...a, url: await signAttachmentUrl(a.path) }))
-    );
   }
 
   return {
@@ -155,7 +147,6 @@ function createTicketRepository({ firestore, FieldValue, bucket }) {
     listEvents,
     addAttachments,
     uploadAttachment,
-    resolveAttachmentUrls,
   };
 }
 
