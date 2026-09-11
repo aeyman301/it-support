@@ -25,7 +25,7 @@
     query: '',
     category: 'all',
     veg: false,
-    noNuts: false,
+    noShell: false,
     picksOnly: false,
     maxSpice: 3,
     picks: loadPicks()
@@ -40,7 +40,7 @@
     empty: document.getElementById('emptyState'),
     reset: document.getElementById('resetFilters'),
     filterVeg: document.getElementById('filterVeg'),
-    filterNoNuts: document.getElementById('filterNoNuts'),
+    filterNoShell: document.getElementById('filterNoShell'),
     filterPicks: document.getElementById('filterPicks'),
     spice: document.querySelectorAll('.segmented [data-spice]'),
     picksButton: document.getElementById('picksButton'),
@@ -56,6 +56,8 @@
     filterBadge: document.getElementById('filterBadge'),
     themeToggle: document.getElementById('themeToggle'),
     hours: document.getElementById('hoursList'),
+    orderNotes: document.getElementById('orderNotes'),
+    usePicks: document.getElementById('usePicks'),
     year: document.getElementById('year')
   };
 
@@ -86,7 +88,7 @@
   /* -------------------------------------------------------- helpers -- */
 
   function money(value) {
-    return 'RM ' + value.toFixed(2);
+    return value === 0 ? 'Free' : 'RM ' + value.toFixed(2);
   }
 
   function categoryById(id) {
@@ -116,7 +118,7 @@
   function matches(item) {
     if (state.category !== 'all' && item.cat !== state.category) return false;
     if (state.veg && item.tags.indexOf('vegetarian') === -1) return false;
-    if (state.noNuts && item.tags.indexOf('nuts') !== -1) return false;
+    if (state.noShell && item.tags.indexOf('shellfish') !== -1) return false;
     if (state.picksOnly && !item.pick) return false;
     if (item.spice > state.maxSpice) return false;
 
@@ -175,7 +177,7 @@
     var wrap = document.createElement('span');
     wrap.className = 'heat';
     wrap.title = ['Not spicy', 'Mild', 'Medium heat', 'Fiery'][level];
-    for (var i = 0; i < level; i++) wrap.appendChild(icon('icon-chilli'));
+    for (var i = 0; i < level; i++) wrap.appendChild(icon('icon-flame'));
     var label = document.createElement('span');
     label.className = 'sr-only';
     label.textContent = wrap.title;
@@ -194,6 +196,16 @@
     var card = document.createElement('article');
     card.className = 'item' + (isPicked(item.id) ? ' is-picked' : '');
     card.id = 'dish-' + item.id;
+
+    if (item.art && window.DishArt) {
+      var art = document.createElement('div');
+      art.className = 'item-art';
+      art.appendChild(DishArt.create(item));
+      card.appendChild(art);
+    }
+
+    var body = document.createElement('div');
+    body.className = 'item-body';
 
     var top = document.createElement('div');
     top.className = 'item-top';
@@ -217,16 +229,16 @@
     }
     price.appendChild(document.createTextNode(money(item.price)));
     top.appendChild(price);
-    card.appendChild(top);
+    body.appendChild(top);
 
     var desc = document.createElement('p');
     desc.className = 'item-desc';
     desc.textContent = item.desc;
-    card.appendChild(desc);
+    body.appendChild(desc);
 
     var meta = document.createElement('div');
     meta.className = 'item-meta';
-    if (item.pick) meta.appendChild(tagPill('Chef’s pick', 'pick'));
+    if (item.pick) meta.appendChild(tagPill('Abang’s pick', 'pick'));
     if (item.spice > 0) meta.appendChild(heatMeter(item.spice));
     TAG_ORDER.forEach(function (tag) {
       if (item.tags.indexOf(tag) === -1) return;
@@ -234,7 +246,8 @@
       var def = TAG_LABELS[tag];
       meta.appendChild(tagPill(def.label, def.kind));
     });
-    card.appendChild(meta);
+    body.appendChild(meta);
+    card.appendChild(body);
 
     card.appendChild(pickToggle(item));
     return card;
@@ -308,7 +321,7 @@
   /* The dietary controls collapse behind a summary on small screens, so show
      a count there when any of them are on. */
   function syncFilterBadge() {
-    var active = (state.veg ? 1 : 0) + (state.noNuts ? 1 : 0) +
+    var active = (state.veg ? 1 : 0) + (state.noShell ? 1 : 0) +
       (state.picksOnly ? 1 : 0) + (state.maxSpice < 3 ? 1 : 0);
     el.filterBadge.textContent = String(active);
     el.filterBadge.hidden = active === 0;
@@ -317,7 +330,7 @@
   function countLabel(n) {
     var dishes = n === 1 ? '1 dish' : n + ' dishes';
     var filtered = state.query || state.category !== 'all' || state.veg ||
-      state.noNuts || state.picksOnly || state.maxSpice < 3;
+      state.noShell || state.picksOnly || state.maxSpice < 3;
     if (!filtered) return 'Showing all ' + dishes + '.';
     if (n === 0) return 'No dishes match.';
     return 'Showing ' + dishes + (state.query ? ' for “' + state.query + '”' : '') + '.';
@@ -491,8 +504,8 @@
       state.veg = el.filterVeg.checked;
       render();
     });
-    el.filterNoNuts.addEventListener('change', function () {
-      state.noNuts = el.filterNoNuts.checked;
+    el.filterNoShell.addEventListener('change', function () {
+      state.noShell = el.filterNoShell.checked;
       render();
     });
     el.filterPicks.addEventListener('change', function () {
@@ -516,13 +529,13 @@
       state.query = '';
       state.category = 'all';
       state.veg = false;
-      state.noNuts = false;
+      state.noShell = false;
       state.picksOnly = false;
       state.maxSpice = 3;
       el.search.value = '';
       el.clearSearch.hidden = true;
       el.filterVeg.checked = false;
-      el.filterNoNuts.checked = false;
+      el.filterNoShell.checked = false;
       el.filterPicks.checked = false;
       Array.prototype.forEach.call(el.spice, function (button) {
         var active = button.dataset.spice === '3';
@@ -562,7 +575,22 @@
       pair.appendChild(dd);
       el.hours.appendChild(pair);
     });
+    document.getElementById('hoursNote').textContent = RESTAURANT.lastOrder;
     el.year.textContent = String(new Date().getFullYear());
+
+    el.usePicks.addEventListener('click', function () {
+      if (!state.picks.length) {
+        el.orderNotes.focus();
+        return;
+      }
+      var lines = state.picks.map(function (id) {
+        var item = itemById(id);
+        return item ? '1 x ' + item.name : '';
+      }).filter(Boolean);
+      var existing = el.orderNotes.value.trim();
+      el.orderNotes.value = (existing ? existing + '\n' : '') + lines.join('\n');
+      el.orderNotes.focus();
+    });
   }
 
   function init() {

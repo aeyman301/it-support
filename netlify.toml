@@ -1,4 +1,4 @@
-# Netlify configuration for the Rasa Warisan menu site.
+# Netlify configuration for the Char Kuey Teow Abang Chor menu site.
 #
 # The site is plain HTML/CSS/JS with no build step, so Netlify only needs to
 # know which folder to publish. If you connect this repo in the Netlify UI,

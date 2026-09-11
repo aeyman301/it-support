@@ -6,8 +6,8 @@ A 3D driving/racing mobile game (iOS/Android) built with Unity.
 
 - **`unity/`** - the Unity project source (currently `Assets/Scripts/` only -
   see `unity/README.md` for why, and for full setup/build instructions).
-- **`restaurant-site/`** - an unrelated static website: a Malaysian restaurant
-  menu browser, ready to deploy to Netlify. See
+- **`restaurant-site/`** - an unrelated static website: the menu for Char Kuey
+  Teow Abang Chor, a Malaysian night stall, ready to deploy to Netlify. See
   [`restaurant-site/README.md`](restaurant-site/README.md).
 
 The game is a single-player time trial: drive a placeholder car around a

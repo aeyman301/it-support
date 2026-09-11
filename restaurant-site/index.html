@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rasa Warisan — Malaysian Kitchen, Kuala Lumpur</title>
-<meta name="description" content="Browse the full menu at Rasa Warisan: nasi lemak, char kuey teow, rendang, satay over charcoal, cendol and teh tarik. Halal-certified kitchen in Bukit Damansara, KL.">
-<meta name="theme-color" content="#1f7a5c" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14100e" media="(prefers-color-scheme: dark)">
+<title>Char Kuey Teow Abang Chor — Kampung Gajah, Perak</title>
+<meta name="description" content="Char kuey teow fried one plate at a time over charcoal, nightly from 6pm in Kampung Gajah, Perak. Browse the full menu: kuey teow, wok plates, soups, sides, sweets and drinks.">
+<meta name="theme-color" content="#f4ede2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12100e" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/img/favicon.svg">
 <meta property="og:type" content="restaurant">
-<meta property="og:title" content="Rasa Warisan — Malaysian Kitchen">
-<meta property="og:description" content="Kampung recipes, mamak favourites and Nyonya classics. Browse the full menu.">
+<meta property="og:title" content="Char Kuey Teow Abang Chor">
+<meta property="og:description" content="One wok, one plate at a time. Nightly from 6pm in Kampung Gajah, Perak.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Archivo:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
@@ -23,53 +23,50 @@
 <!-- Icon sprite: referenced with <use href="#icon-..."> -->
 <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <g id="icon-roti" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="8.5"/><path d="M12 3.5c-2.5 3-2.5 5.5 0 8.5s2.5 5.5 0 8.5"/><path d="M20.5 12c-3 0-5.5 0-8.5 0"/>
-    </g>
-    <g id="icon-rice" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3.5 11h17a8.5 8.5 0 0 1-17 0Z"/><path d="M2 20.5h20"/><path d="M8 11a4 4 0 0 1 8 0"/><path d="M12 4.5v2.5"/>
-    </g>
-    <g id="icon-noodles" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 10h16a8 8 0 0 1-16 0Z"/><path d="M8 10V5.5M12 10V4M16 10V5.5"/><path d="M6 20.5h12"/>
-    </g>
-    <g id="icon-wok" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    <symbol id="icon-wok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M2.5 10.5h16a8 8 0 0 1-16 0Z"/><path d="M18.5 10.5h3"/><path d="M8 7c1.5-1 1-2.5 0-3.5M12 6.5c1.8-1.2 1.2-3 0-4"/>
-    </g>
-    <g id="icon-satay" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    </symbol>
+    <symbol id="icon-noodles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 10h16a8 8 0 0 1-16 0Z"/><path d="M8 10V5.5M12 10V4M16 10V5.5"/><path d="M6 20.5h12"/>
+    </symbol>
+    <symbol id="icon-soup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 11h16a8 8 0 0 1-16 0Z"/><path d="M20 12.5h1.5a2 2 0 0 1 0 4H18"/><path d="M9 7.5c1-1 .5-2.5-.5-3.5M13.5 7.5c1-1 .5-2.5-.5-3.5"/>
+    </symbol>
+    <symbol id="icon-satay" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 20 20 4"/><rect x="7.5" y="7.5" width="4.2" height="4.2" rx="1.2" transform="rotate(45 9.6 9.6)"/>
       <rect x="12.5" y="12.5" width="4.2" height="4.2" rx="1.2" transform="rotate(45 14.6 14.6)"/>
-    </g>
-    <g id="icon-soup" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 11h16a8 8 0 0 1-16 0Z"/><path d="M20 12.5h1.5a2 2 0 0 1 0 4H18"/><path d="M9 7.5c1-1 .5-2.5-.5-3.5M13.5 7.5c1-1 .5-2.5-.5-3.5"/>
-    </g>
-    <g id="icon-dessert" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    </symbol>
+    <symbol id="icon-dessert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6 10.5h12L12 21 6 10.5Z"/><path d="M5 10.5c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M12 3.5V2"/>
-    </g>
-    <g id="icon-drink" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+    </symbol>
+    <symbol id="icon-drink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
       <path d="M6.5 7h11l-1.3 12.2a1.5 1.5 0 0 1-1.5 1.3H9.3a1.5 1.5 0 0 1-1.5-1.3L6.5 7Z"/><path d="M6.9 11.5h10.2"/><path d="M14 3.5 12.5 7"/>
-    </g>
-    <g id="icon-chilli" fill="currentColor"><path d="M12.2 3.6c.4-.9 1.4-1.4 2.3-1.1.8.3 1.2 1 1.1 1.8 2.2.9 3.6 3 3.6 5.6 0 4.7-3.9 8.9-8.6 10.9-1.7.7-3.4 1-4.6 1-.8 0-1.4-.6-1.4-1.3 0-.6.4-1.1 1-1.3 4.5-1.2 7.2-4.9 7.4-9.2.1-2.2-.4-4.2-.8-6.4Z"/></g>
-    <g id="icon-search" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></g>
-    <g id="icon-sun" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></g>
-    <g id="icon-moon" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></g>
-    <g id="icon-note" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9L19 8v12.5H6Z"/><path d="M14.5 3.5V8H19"/><path d="M9 12.5h7M9 16h5"/></g>
-    <g id="icon-close" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></g>
+    </symbol>
+    <symbol id="icon-chilli" viewBox="0 0 24 24" fill="currentColor"><path d="M12.2 3.6c.4-.9 1.4-1.4 2.3-1.1.8.3 1.2 1 1.1 1.8 2.2.9 3.6 3 3.6 5.6 0 4.7-3.9 8.9-8.6 10.9-1.7.7-3.4 1-4.6 1-.8 0-1.4-.6-1.4-1.3 0-.6.4-1.1 1-1.3 4.5-1.2 7.2-4.9 7.4-9.2.1-2.2-.4-4.2-.8-6.4Z"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></symbol>
+    <symbol id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4"/></symbol>
+    <symbol id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/></symbol>
+    <symbol id="icon-note" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9L19 8v12.5H6Z"/><path d="M14.5 3.5V8H19"/><path d="M9 12.5h7M9 16h5"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-flame" viewBox="0 0 24 24" fill="currentColor"><path d="M13.4 2.1c.3 3-1 4.4-2.4 5.7-1.6 1.5-3.3 3.1-3.3 6.4a6.3 6.3 0 0 0 12.6 0c0-2.6-1-4-2-5.2-.6-.8-1.2-1.5-1.5-2.4-.6 1.3-1.4 1.9-2 2.3.3-2.2-.3-4.6-1.4-6.8Z"/></symbol>
   </defs>
 </svg>
 
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="#top">
-      <span class="brand-mark" aria-hidden="true">RW</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><use href="#icon-flame"/></svg>
+      </span>
       <span class="brand-text">
-        <span class="brand-name">Rasa Warisan</span>
-        <span class="brand-sub">Malaysian Kitchen · Kuala Lumpur</span>
+        <span class="brand-name">Abang Chor</span>
+        <span class="brand-sub">Char Kuey Teow · Kampung Gajah</span>
       </span>
     </a>
     <nav class="site-nav" aria-label="Primary">
       <a href="#menu">Menu</a>
-      <a href="#reserve">Reserve</a>
-      <a href="#visit">Visit</a>
+      <a href="#bungkus">Bungkus</a>
+      <a href="#visit">Find us</a>
     </nav>
     <div class="header-actions">
       <button id="picksButton" class="btn btn-ghost picks-button" type="button" aria-expanded="false" aria-controls="picksPanel">
@@ -89,21 +86,22 @@
   <section class="hero">
     <div class="hero-batik" aria-hidden="true"></div>
     <div class="wrap hero-inner">
-      <p class="eyebrow">Est. 1998 · Halal-certified kitchen</p>
-      <h1>Everything from the <em>kampung</em> table,<br>cooked the long way.</h1>
+      <p class="eyebrow">Nightly, 6pm till the kuey teow runs out</p>
+      <h1>Fried one plate at a time,<br>over a flame you can hear.</h1>
       <p class="lede">
-        Sambal pounded by hand each morning. Satay fanned over coconut-husk charcoal.
-        Roti canai from 8am until the dough runs out. Browse the full menu below —
-        tap the bookmark on anything you like and show the list to your server.
+        Abang Chor has stood at the same wok on Jalan Besar for nineteen years.
+        Flat noodles, cockles from the morning market, chives, a duck egg if you
+        ask — one plate per fry, because two plates in the wok means no wok hei.
+        The stall opens at six and closes when the noodles are gone.
       </p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#menu">Browse the menu</a>
-        <a class="btn btn-outline" href="#reserve">Book a table</a>
+        <a class="btn btn-primary" href="#menu">See tonight’s menu</a>
+        <a class="btn btn-outline" href="#bungkus">Order bungkus</a>
       </div>
       <ul class="hero-facts">
-        <li><strong>Open daily</strong><span>8:00am – late</span></li>
-        <li><strong>Bukit Damansara</strong><span>5 min from Pusat Bandar Damansara MRT</span></li>
-        <li><strong>Dine in &amp; takeaway</strong><span>WhatsApp orders welcome</span></li>
+        <li><strong>6:00pm – 11:00pm</strong><span>Last order 10:45pm</span></li>
+        <li><strong>Medan Selera Jalan Besar</strong><span>Kampung Gajah, Perak</span></li>
+        <li><strong>Cash &amp; DuitNow QR</strong><span>Bungkus from the side window</span></li>
       </ul>
     </div>
   </section>
@@ -112,7 +110,10 @@
     <div class="wrap">
       <div class="section-head">
         <h2 id="menuHeading">The Menu</h2>
-        <p>All prices in Ringgit Malaysia and inclusive of tax. Kitchen closes 30 minutes before we do.</p>
+        <p>
+          Prices in Ringgit Malaysia. Every plate is fried to order, so give the
+          wok a few minutes on a busy night. Tell us if you want it without cockles.
+        </p>
       </div>
     </div>
 
@@ -121,7 +122,7 @@
         <div class="search-field">
           <svg class="icon" aria-hidden="true"><use href="#icon-search"/></svg>
           <label class="sr-only" for="search">Search the menu</label>
-          <input id="search" type="search" placeholder="Search dishes, e.g. laksa, ayam, cendol" autocomplete="off" spellcheck="false">
+          <input id="search" type="search" placeholder="Search dishes, e.g. kerang, telur itik, cendol" autocomplete="off" spellcheck="false">
           <button type="button" id="clearSearch" class="clear-search" hidden aria-label="Clear search">
             <svg class="icon" aria-hidden="true"><use href="#icon-close"/></svg>
           </button>
@@ -136,8 +137,8 @@
           <fieldset class="filter-group">
             <legend class="sr-only">Dietary filters</legend>
             <label class="switch"><input type="checkbox" id="filterVeg"><span>Vegetarian</span></label>
-            <label class="switch"><input type="checkbox" id="filterNoNuts"><span>No nuts</span></label>
-            <label class="switch"><input type="checkbox" id="filterPicks"><span>Chef’s picks</span></label>
+            <label class="switch"><input type="checkbox" id="filterNoShell"><span>No shellfish</span></label>
+            <label class="switch"><input type="checkbox" id="filterPicks"><span>Abang’s picks</span></label>
           </fieldset>
           <div class="spice-filter">
             <span class="filter-label" id="spiceLabel">Heat</span>
@@ -159,65 +160,61 @@
         Nothing matches that. <button type="button" class="linkish" id="resetFilters">Clear the filters</button> and start again.
       </p>
       <noscript>
-        <p class="empty-state">This menu needs JavaScript to display. Please call us on
-        <a href="tel:+60320118877">+60 3-2011 8877</a> and we will read it to you.</p>
+        <p class="empty-state">This menu needs JavaScript to display. Please call
+        <a href="tel:+60125374180">012-537 4180</a> and Abang will read it to you.</p>
       </noscript>
     </div>
   </section>
 
-  <section id="reserve" class="reserve" aria-labelledby="reserveHeading">
+  <section id="bungkus" class="reserve" aria-labelledby="bungkusHeading">
     <div class="wrap reserve-inner">
       <div class="reserve-copy">
-        <h2 id="reserveHeading">Book a table</h2>
+        <h2 id="bungkusHeading">Order bungkus</h2>
         <p>
-          We keep a few tables back for walk-ins, but weekends fill up by 6pm.
-          Tell us when you are coming and we will confirm by WhatsApp within the hour.
+          Send your order ahead and collect it at the side window — useful on a
+          Friday, when the queue reaches the sugarcane stall. We start frying
+          fifteen minutes before your pickup time, so it is still hot when you get it.
         </p>
         <p class="reserve-alt">
-          In a hurry? <a href="https://wa.me/60320118877">Message us on WhatsApp</a> or call
-          <a href="tel:+60320118877">+60 3-2011 8877</a>.
+          Or just message <a href="https://wa.me/60125374180">012-537 4180 on WhatsApp</a>.
+          No delivery — collection only.
         </p>
       </div>
       <form
         class="reserve-form"
-        name="reservation"
+        name="bungkus"
         method="POST"
         action="/thanks.html"
         data-netlify="true"
         netlify-honeypot="bot-field"
       >
-        <input type="hidden" name="form-name" value="reservation">
+        <input type="hidden" name="form-name" value="bungkus">
         <p class="hidden-field">
           <label>Leave this empty: <input name="bot-field"></label>
         </p>
         <div class="field">
-          <label for="resName">Name</label>
-          <input id="resName" name="name" type="text" required autocomplete="name">
-        </div>
-        <div class="field">
-          <label for="resPhone">Mobile number</label>
-          <input id="resPhone" name="phone" type="tel" required autocomplete="tel" placeholder="012-345 6789">
+          <label for="orderName">Name</label>
+          <input id="orderName" name="name" type="text" required autocomplete="name">
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="resDate">Date</label>
-            <input id="resDate" name="date" type="date" required>
+            <label for="orderPhone">Mobile number</label>
+            <input id="orderPhone" name="phone" type="tel" required autocomplete="tel" placeholder="012-345 6789">
           </div>
           <div class="field">
-            <label for="resTime">Time</label>
-            <input id="resTime" name="time" type="time" required value="19:00">
-          </div>
-          <div class="field">
-            <label for="resPax">Guests</label>
-            <input id="resPax" name="guests" type="number" min="1" max="30" value="2" required>
+            <label for="orderTime">Pickup time</label>
+            <input id="orderTime" name="pickup" type="time" required value="19:30" min="18:00" max="23:00">
           </div>
         </div>
         <div class="field">
-          <label for="resNotes">Anything we should know?</label>
-          <textarea id="resNotes" name="notes" rows="3" placeholder="Allergies, high chair, no beef, a birthday…"></textarea>
+          <div class="field-head">
+            <label for="orderNotes">Your order</label>
+            <button type="button" class="linkish" id="usePicks">Fill from my picks</button>
+          </div>
+          <textarea id="orderNotes" name="order" rows="4" required placeholder="2 x Char Kuey Teow Biasa, no cockles&#10;1 x Teh O Ais Limau"></textarea>
         </div>
-        <button class="btn btn-primary btn-block" type="submit">Request a table</button>
-        <p class="form-note">We only use your number to confirm this booking.</p>
+        <button class="btn btn-primary btn-block" type="submit">Send the order</button>
+        <p class="form-note">We confirm by WhatsApp. Your number is used for this order only.</p>
       </form>
     </div>
   </section>
@@ -225,29 +222,29 @@
   <section id="visit" class="visit" aria-labelledby="visitHeading">
     <div class="wrap visit-inner">
       <div>
-        <h2 id="visitHeading">Visit us</h2>
+        <h2 id="visitHeading">Find us</h2>
         <address>
-          17 Jalan Setia Murni<br>
-          Bukit Damansara<br>
-          50490 Kuala Lumpur
+          Gerai 4, Medan Selera Jalan Besar<br>
+          36800 Kampung Gajah<br>
+          Perak Tengah, Perak
         </address>
         <p class="visit-links">
-          <a href="tel:+60320118877">+60 3-2011 8877</a> ·
-          <a href="https://wa.me/60320118877">WhatsApp</a> ·
-          <a href="mailto:makan@rasawarisan.example">Email</a>
+          <a href="tel:+60125374180">012-537 4180</a> ·
+          <a href="https://wa.me/60125374180">WhatsApp</a>
         </p>
       </div>
       <div>
         <h3>Opening hours</h3>
         <dl class="hours" id="hoursList"></dl>
+        <p class="hours-note" id="hoursNote"></p>
       </div>
       <div>
         <h3>Good to know</h3>
         <ul class="notes">
-          <li>Halal-certified kitchen — no pork, no alcohol on the premises.</li>
-          <li>Satay and charcoal grill start at 5pm.</li>
-          <li>Vegetarian dishes are marked; ask and we will cook them without belacan.</li>
-          <li>Do tell us about allergies — several dishes carry peanut and shellfish.</li>
+          <li>No pork and no lard — everything is fried in vegetable oil.</li>
+          <li>Cockles go into the kuey teow by default. Say <em>tanpa kerang</em> and we leave them out.</li>
+          <li>The vegetarian plate is cooked in a separate wok, but the same stall handles seafood.</li>
+          <li>Tables are shared on a busy night. Bungkus if you are in a hurry.</li>
         </ul>
       </div>
     </div>
@@ -256,8 +253,8 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <p>© <span id="year">2026</span> Rasa Warisan Sdn Bhd. Made in Kuala Lumpur.</p>
-    <p class="footer-note">A demonstration site. Dishes and prices are representative of Malaysian menus, not a real trading restaurant.</p>
+    <p>© <span id="year">2026</span> Char Kuey Teow Abang Chor · Kampung Gajah, Perak</p>
+    <p class="footer-note">A demonstration site. Dishes and prices are representative of a Malaysian night stall, not a real trading business.</p>
   </div>
 </footer>
 
@@ -273,13 +270,14 @@
   <div class="picks-body" id="picksBody"></div>
   <div class="picks-foot">
     <div class="picks-total"><span>Estimated total</span><strong id="picksTotal">RM 0.00</strong></div>
-    <p class="picks-hint">Saved on this device only. Show this list to your server, or send it to us.</p>
-    <a class="btn btn-primary btn-block" id="picksWhatsapp" href="https://wa.me/60320118877">Send to us on WhatsApp</a>
+    <p class="picks-hint">Saved on this device only. Show the list at the stall, or send it to us.</p>
+    <a class="btn btn-primary btn-block" id="picksWhatsapp" href="https://wa.me/60125374180">Send to us on WhatsApp</a>
     <button type="button" class="linkish" id="picksClear">Clear the list</button>
   </div>
 </aside>
 
 <script src="assets/js/menu-data.js"></script>
+<script src="assets/js/dish-art.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
 </html>
