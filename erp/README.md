@@ -1,55 +1,77 @@
-# Material Planning
+# PNA Material Planning
 
-A small internal tool for material planning: each material gets its own
-configurable **lead time**, and the planning dashboard combines that with
-warehouse stock, outstanding purchase orders, and the production plan to
-tell you what needs to be ordered and by when — instead of working it out
-by hand for every material.
+An internal MRP tool for PNA Technologies: it holds the **bill of materials**
+for every wire harness we build, takes the **production plan** of customer
+orders and forecasts, explodes one through the other, and combines the result
+with warehouse stock and outstanding purchase orders to say **what to order
+and by when** — instead of working that out by hand for hundreds of
+components.
 
-It's a React + TypeScript app (built with Vite) using **Firestore** (Google
-Firebase) as its database, so multiple people can see the same live data.
+React + TypeScript (Vite) on **Firestore** (Google Firebase), so everyone
+sees the same live data.
 
-## What it does
+## The five pages
 
-- **Materials** — a master list of materials, each with its own lead time
-  (days from placing a PO to it arriving), safety stock, minimum order
-  quantity, and current on-hand quantity at the warehouse.
-- **Outstanding Orders** — purchase orders you've placed but haven't
-  received yet. The expected arrival date is auto-calculated as
-  `order date + material lead time`, and can be overridden once a supplier
-  confirms a different date. Marking an order "received" adds its quantity
-  to the material's on-hand stock.
-- **Production Plan** — how much of each material is needed and by when
-  (from work orders / sales orders / your own forecast).
-- **Planning Dashboard** — for every material, projects the stock balance
-  forward in time using on-hand stock + incoming outstanding orders − planned
-  demand. Whenever that projection would fall below safety stock, it works
-  backwards using the material's lead time to tell you the last date you can
-  place a new order ("order by") and a suggested quantity, flagging
-  anything already overdue as urgent.
+- **Planning Dashboard** — for every raw material, projects the stock balance
+  forward using on-hand stock + incoming orders − planned demand. Whenever
+  that projection would fall below safety stock, it works backwards along the
+  material's lead time to give the last date a PO can be placed ("order by")
+  and a suggested quantity, flagging anything already overdue as urgent. Also
+  rolls up what each product's orders consume.
+- **Inventory Stock** — the raw material master: code, description, supplier,
+  where it ships from, UOM, lead time, safety stock, minimum order quantity
+  and current on-hand quantity.
+- **Bill of Materials (BOM)** — the recipe for each finished product: which
+  raw materials it consumes and how much of each, **per unit**. Products are
+  grouped by model (Perodua D42L, Proton Exora, Isuzu VL20, …).
+- **Outstanding Orders** — purchase orders placed but not yet received.
+  Expected arrival defaults to `order date + material lead time` and can be
+  overridden once a supplier confirms. Marking an order received adds its
+  quantity to on-hand stock.
+- **Production Plan** — customer orders and forecast: which product, how
+  many, needed by when. A "current month planning" card explodes this
+  month's orders through their BOM recipes into a **material forecast**,
+  showing forecast demand, on-hand stock and projected shortfall per
+  component.
+
+### Products and raw materials
+
+Both live in the `materials` collection; a finished product is a document
+tagged `kind: "product"` with a `model` and a `bom` array. The app splits
+them on load, so products never appear in inventory or purchasing views —
+they're only offered in the production plan's product picker and on the BOM
+page.
+
+Demand is never stored twice. A plan entry records the product and the
+quantity; the materials it consumes are derived from the product's recipe at
+read time (`resolveEntryItems` in [`src/lib/mrp.ts`](src/lib/mrp.ts)). Fix a
+BOM once and every forecast, dashboard rollup and order suggestion moves with
+it.
 
 ## Getting started
 
+From the app directory (the repository root here; `erp/` if you're in the
+`it-support` monorepo):
+
 ```bash
-cd erp
 npm install
 cp .env.example .env.local   # then fill in your Firebase config, see below
 npm run dev
 ```
 
-Until `.env.local` is filled in, the app shows setup instructions instead of
-a blank/stuck screen.
+Until `.env.local` is filled in, the app shows setup instructions rather than
+a blank screen.
 
 ### 1. Create a Firebase project
 
-1. Go to the [Firebase console](https://console.firebase.google.com/) and
-   create a new project (or use an existing one).
-2. **Build → Firestore Database → Create database** — start in production
-   mode (the rules shipped here lock it down anyway).
+1. In the [Firebase console](https://console.firebase.google.com/), create a
+   project (or use an existing one).
+2. **Build → Firestore Database → Create database** — production mode is
+   fine; the rules shipped here lock it down.
 3. **Build → Authentication → Get started → Sign-in method → Anonymous** —
    enable it. See the security note below for why.
 4. **Project settings → General → Your apps → Add app → Web** — register an
-   app and copy the `firebaseConfig` values into `erp/.env.local`.
+   app and copy the `firebaseConfig` values into `.env.local`.
 
 ### 2. Deploy the security rules
 
@@ -66,99 +88,128 @@ firebase deploy --only firestore:rules
 npm run dev
 ```
 
-Open the printed local URL, add your first material with its lead time, log
-an outstanding PO, add a production plan entry, then check the Planning
-Dashboard.
-
 ## Data model (Firestore collections)
 
-- `materials/{id}`: `code, name, uom, leadTimeDays, safetyStock, minOrderQty, onHandQty, notes`
-- `purchaseOrders/{id}`: `materialId, poNumber, orderDate, qty, expectedArrivalDate, status ("outstanding" | "received" | "cancelled"), receivedDate?, notes`
-- `productionPlan/{id}`: `materialId, neededByDate, qty, source?, notes`
+- `materials/{partCode}` — raw material: `code, name, uom, leadTimeDays,
+  safetyStock, minOrderQty, onHandQty, supplier?, shipFrom?, notes?`
+- `materials/{partCode}` with `kind: "product"` — finished product: `code,
+  name, model, bom: [{ materialId, qty }]` where `qty` is **per unit**
+- `purchaseOrders/{id}` — `materialId, poNumber, orderDate, qty,
+  expectedArrivalDate, status ("outstanding" | "received" | "cancelled"),
+  receivedDate?, notes?`
+- `productionPlan/{id}` — `productId, productQty, productName, neededByDate,
+  source?, notes?`, plus an optional `items: [{ materialId, qty }]` for an
+  order whose materials are entered by hand instead of coming from the BOM
 
-The planning math lives in [`src/lib/mrp.ts`](src/lib/mrp.ts) as a small,
-pure, unit-testable function — it doesn't touch Firestore directly, so it's
-easy to verify or extend independently of the UI.
+The planning math lives in [`src/lib/mrp.ts`](src/lib/mrp.ts) as pure
+functions that don't touch Firestore, so it can be verified or extended
+independently of the UI. `buildDemandIndex` rolls the whole plan up once per
+render rather than re-walking it per material — a few hundred harnesses of
+~85 components each against ~900 materials is tens of millions of iterations
+otherwise.
+
+## Importing from the monthly MRP workbook
+
+The supply chain team's monthly "MRP PLAN ALL" workbook can be loaded
+directly. Three sheets matter, each with its own extractor in `scripts/`:
+
+```bash
+pip install openpyxl   # once
+
+# 1. Sheet "1. Raw Stock - Warehouse" + "MRP" → materials, incoming POs
+python3 scripts/extract_mrp_xlsx.py "SEP26_MRP_PLAN_ALL_Rev0.xlsx" --out mrp.json
+
+# 2. Sheet "4. Summ FC By Component" → the bill of materials
+python3 scripts/extract_bom_xlsx.py "SEP26_MRP_PLAN_ALL_Rev0.xlsx" --out bom.json
+
+# 3. Sheet "3. Summ FC By Harness - PPC" → the production plan and forecast
+python3 scripts/extract_harness_plan_xlsx.py "SEP26_MRP_PLAN_ALL_Rev0.xlsx" --out plan.json
+
+# then load each one
+node --env-file=.env.local scripts/import_to_firestore.mjs bom.json
+```
+
+The harness sheet is the **source** plan: one row per finished harness, with
+a FIRM quantity for the committed month and FC quantities for the forecast
+months after it. The MRP sheet's own raw-material demand is that same
+forecast already exploded through the BOM, so it isn't imported — storing it
+would duplicate what the recipes say.
+
+Re-running with a newer month is safe. Every record uses a deterministic ID
+(part code, or part code + month), so imports upsert rather than duplicate,
+and the importer protects hand-curated data:
+
+- `leadTimeDays`, `safetyStock`, `minOrderQty`, `supplier`, `shipFrom` and
+  `notes` are **preserved** on any material that already exists — the monthly
+  report writes `leadTimeDays: 0` for every row and would otherwise wipe them.
+  On-hand quantity is always refreshed, since that's a live stock snapshot.
+- An import carrying no BOM never blanks a recipe that's already set.
+- BOM lines are matched on letters and digits alone, so a component written
+  `71162783` on one sheet and `7116-2783` on another resolves to the one
+  material rather than creating a near-duplicate.
+
+Materials with no lead time set are treated as "not yet configured" rather
+than guessed at: they're kept out of the order-suggestions list and counted
+separately, so a missing lead time can't silently invent or hide urgency.
+
+### Known gap: units of measure
+
+The BOM sheet states consumption in the unit a harness uses (metres of tape,
+metres of tubing), while the warehouse counts purchase units (rolls). For
+about 23 materials — vinyl tape, OPP/masking tape, NTVS tubing, the `430W21xx`
+family — the forecast therefore overstates demand by the roll length (×20,
+×30, ×35, ×50 and up). Every other material reconciles with the MRP sheet's
+own figures to within rounding. Fixing this properly needs a per-material
+conversion factor applied when a recipe is exploded; until then, treat the
+forecast for those items as metres, not rolls.
+
+## Bulk-updating lead times from a spreadsheet
+
+The Inventory Stock page has an **"Import lead times from a spreadsheet"**
+card: upload a CSV export (Excel or Google Sheets → File → Save As /
+Download → CSV) and it auto-detects which column holds the material code,
+lead time, safety stock and so on, with the mapping editable before import.
+Rows match existing materials by code; unmatched codes are reported and
+skipped, never created. CSV only — the one real browser Excel parser has
+unpatched security advisories, so it isn't used here.
+
+## Local development without a real Firebase project
+
+```bash
+npm install -g firebase-tools
+firebase emulators:start --only auth,firestore
+```
+
+Set `VITE_USE_FIRESTORE_EMULATOR=true` in `.env.local` (placeholder values
+are fine for the other `VITE_FIREBASE_*` vars in this mode) and run
+`npm run dev`. The scripts in `scripts/` honour the same flag, so a workbook
+can be imported into the emulator first to check what it would do.
 
 ## Security note
 
 The shipped `firestore.rules` require a signed-in user, and the app signs
 everyone in **anonymously** on load so it works without building a login
-screen first. That keeps the data out of reach of anyone who doesn't have
-the app open, but it is **not** real access control — anyone who obtains the
-Firebase config (which is not a secret in client apps) could sign in the
-same way. Before rolling this out beyond a quick internal trial, replace
-anonymous auth with real sign-in (e.g. Google sign-in restricted to your
-company's email domain via [Firebase Auth's provider
-settings](https://firebase.google.com/docs/auth/web/google-signin) and a
-matching rule such as
-`request.auth.token.email.matches('.*@yourcompany[.]com')`).
-
-## Local development without a real Firebase project
-
-You can run against the [Firebase Local
-Emulator Suite](https://firebase.google.com/docs/emulator-suite) instead of
-a live project:
-
-```bash
-npm install -g firebase-tools
-firebase emulators:start   # starts Auth + Firestore emulators per firebase.json
-```
-
-Then set `VITE_USE_FIRESTORE_EMULATOR=true` in `.env.local` (any
-placeholder values are fine for the other `VITE_FIREBASE_*` vars in this
-mode) and run `npm run dev` as usual.
-
-## Bulk-updating lead times from a spreadsheet
-
-The Materials & Lead Time page has an **"Import lead times from a
-spreadsheet"** card: upload a CSV export of any lead-time spreadsheet (in
-Excel or Google Sheets, File → Save As / Download → CSV) and it auto-detects
-which column holds the material code, lead time, safety stock, etc. — you
-can adjust the mapping before importing. Rows are matched to existing
-materials by code; matches are updated, unmatched codes are reported but
-skipped (no new materials are created). Only CSV is supported, not `.xlsx`
-directly — the only real Excel-parsing library for browsers has unpatched
-security advisories, so it isn't used here.
-
-## Importing from the monthly MRP workbook
-
-If the supply chain team's monthly "MRP PLAN ALL" Excel file is available,
-its Raw Stock and MRP sheets can be imported directly instead of entering
-materials by hand:
-
-```bash
-cd erp/scripts
-pip install openpyxl   # once
-python3 extract_mrp_xlsx.py "/path/to/AUG26_MRP_PLAN_ALL_Rev0.xlsx" --out mrp_import.json
-node --env-file=../.env.local import_to_firestore.mjs mrp_import.json
-```
-
-This pulls in materials (code, description, supplier, UOM, current on-hand
-stock — **lead time is not in the source file and always imports as unset**,
-so it still needs to be filled in per material), outstanding orders (from
-the MRP sheet's monthly incoming schedule), and production plan demand
-(from its monthly usage forecast). Re-running with a newer month's file is
-safe — every imported record uses a deterministic ID (part code, or part
-code + month), so it upserts instead of duplicating. Use `extract_mrp_xlsx.py
---limit N` to try a small batch first.
-
-The planning dashboard treats a material with no lead time set as "not yet
-configured" rather than guessing — it won't appear in the order-suggestions
-list (which would otherwise be misleading), and instead shows up in a
-separate "Lead time not set" count until you fill it in.
+screen first. That keeps the data out of reach of anyone who doesn't have the
+app open, but it is **not** real access control — anyone who obtains the
+Firebase config (which is not a secret in client apps) could sign in the same
+way. Before rolling this out more widely, replace anonymous auth with real
+sign-in, e.g. Google sign-in restricted to the company domain via [Firebase
+Auth's provider settings](https://firebase.google.com/docs/auth/web/google-signin)
+and a rule such as `request.auth.token.email.matches('.*@pnatech[.]com[.]my')`.
 
 ## Deploying
 
 ```bash
-npm run build
-firebase deploy --only hosting,firestore:rules
+npm run build      # tsc -b && vite build → dist/
+npm run lint       # oxlint
 ```
+
+`dist/` is a static bundle — deploy with `firebase deploy --only
+hosting,firestore:rules`, or upload its contents to any web host.
 
 ## Possible next steps
 
-- Real sign-in (see security note above) with per-user roles (buyer vs.
-  read-only viewer).
-- CSV import/export for materials and production plan bulk updates.
+- Per-material unit conversion, to close the metres-vs-rolls gap above.
+- Real sign-in (see the security note) with roles: buyer vs. read-only.
 - Multiple warehouses/locations per material.
 - Supplier-specific lead times (a material can have more than one supplier).
